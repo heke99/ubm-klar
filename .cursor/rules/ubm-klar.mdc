@@ -1,0 +1,68 @@
+---
+description: UBM Klar production architecture and safety rules
+alwaysApply: true
+---
+
+# UBM Klar Cursor Rules
+
+You are working on UBM Klar, a Swedish municipal readiness and payment-control platform.
+
+## Absolute rules
+
+- Do not build production as a normal shared multi-tenant SaaS.
+- Production must support isolated municipal data planes.
+- Model B means one vendor-hosted isolated Supabase/Postgres project per municipality.
+- Model C means municipality-owned data plane.
+- The central control plane must never store municipal personal data.
+- Never expose Supabase service role keys to frontend.
+- Never log personal identity numbers, names, income records, LSS data, households, medical data, bank accounts, documents, UBM payloads, or case notes in vendor telemetry.
+- Unknown tenant domains must fail closed.
+- Frontend must not perform sensitive operations directly against Supabase.
+- Sensitive operations must go through backend and worker services.
+- Use RLS on sensitive tables.
+- Use maker-checker for UBM export, document export, payment recipient changes, break-glass, support access, retention/deletion, and production go-live.
+- UBM Klar is not an official Utbetalningsmyndigheten service. Do not imply official authority status.
+
+## Product modules
+
+Build in these areas:
+
+- control plane without PII
+- tenant resolver
+- municipal data plane
+- auth and SSO
+- RBAC + ABAC + need-to-know
+- audit and data access logs
+- LSS/personlig assistans
+- economic assistance
+- UBM readiness
+- UBM request/export/notification flows
+- payment control and reconciliation
+- import engine
+- data quality engine
+- rule engine
+- document vault and redaction
+- archive/retention/e-archive
+- public-record and secrecy review
+- DPIA/GDPR/PUB support
+- cybersecurity/NIS2 readiness
+- accessibility/WCAG
+- exit export
+- commercial billing and entitlements without citizen data
+
+## Build discipline
+
+Work in batches.
+After each batch, summarize:
+
+- what was implemented
+- files changed
+- migrations added
+- tests added
+- commands run
+- remaining work
+- environment variables needed
+- security/compliance notes
+- whether the batch is production-safe or needs hardening
+
+Do not skip tests unless environment variables are missing. If commands cannot run, document exactly why.
