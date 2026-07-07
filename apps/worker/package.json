@@ -1,15 +1,30 @@
 {
   "name": "@ubm-klar/worker",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "echo 'TODO: wire worker runtime'",
+    "dev": "node --watch --experimental-strip-types src/main.ts",
     "build": "tsc -p tsconfig.json --noEmit",
-    "lint": "echo 'TODO: add worker lint rules'",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests"
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "@ubm-klar/anomaly-detection": "workspace:*",
+    "@ubm-klar/config": "workspace:*",
+    "@ubm-klar/data-access-log": "workspace:*",
+    "@ubm-klar/data-quality-engine": "workspace:*",
+    "@ubm-klar/economic-assistance-domain": "workspace:*",
+    "@ubm-klar/import-engine": "workspace:*",
+    "@ubm-klar/lss-domain": "workspace:*",
+    "@ubm-klar/payment-control-engine": "workspace:*",
+    "@ubm-klar/reconciliation-engine": "workspace:*",
+    "@ubm-klar/redaction-engine": "workspace:*",
+    "@ubm-klar/rule-engine": "workspace:*",
+    "@ubm-klar/shared-types": "workspace:*",
+    "@ubm-klar/ubm-export-engine": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.8"
+  }
 }

@@ -1,0 +1,24 @@
+{
+  "release": "1.0.0",
+  "requires": {
+    "postgres": ">=15",
+    "node": ">=22",
+    "supabaseCli": ">=1.200 (Model B/C1/C2 deployments)"
+  },
+  "dataPlane": {
+    "compatibleFromRelease": "1.0.0",
+    "migrationPath": "initial"
+  },
+  "controlPlane": {
+    "compatibleFromRelease": "1.0.0"
+  },
+  "deploymentModes": [
+    "model_b_vendor_hosted_isolated",
+    "model_c1_municipality_managed_supabase",
+    "model_c2_self_hosted_supabase",
+    "model_c3_postgres_separate_storage"
+  ],
+  "featureFlags": {
+    "ubm_recurring_reporting_2029": "off (awaiting official specifications)"
+  }
+}

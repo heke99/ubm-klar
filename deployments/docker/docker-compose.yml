@@ -1,0 +1,27 @@
+# Local development / demo stack ONLY (shared DB is never used in production).
+services:
+  postgres-dataplane:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ubm
+      POSTGRES_PASSWORD: ubm
+      POSTGRES_DB: ubm_dataplane
+    ports:
+      - '54322:5432'
+    volumes:
+      - dataplane:/var/lib/postgresql/data
+
+  postgres-controlplane:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ubm
+      POSTGRES_PASSWORD: ubm
+      POSTGRES_DB: ubm_controlplane
+    ports:
+      - '54323:5432'
+    volumes:
+      - controlplane:/var/lib/postgresql/data
+
+volumes:
+  dataplane:
+  controlplane:

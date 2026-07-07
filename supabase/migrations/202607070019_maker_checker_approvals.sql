@@ -78,3 +78,26 @@ create trigger approval_audit_log_no_update
 alter table approval_workflows enable row level security;
 alter table approval_steps enable row level security;
 alter table approval_audit_log enable row level security;
+
+-- Deferred FKs from earlier migrations (tables created before approval_workflows existed)
+alter table ubm_export_proposals
+  add constraint ubm_export_proposals_workflow_fk
+  foreign key (approval_workflow_id) references approval_workflows(id);
+alter table support_access_sessions
+  add constraint support_access_sessions_workflow_fk
+  foreign key (approval_workflow_id) references approval_workflows(id);
+alter table break_glass_sessions
+  add constraint break_glass_sessions_workflow_fk
+  foreign key (approval_workflow_id) references approval_workflows(id);
+alter table retention_actions
+  add constraint retention_actions_workflow_fk
+  foreign key (approval_workflow_id) references approval_workflows(id);
+alter table exit_exports
+  add constraint exit_exports_workflow_fk
+  foreign key (approval_workflow_id) references approval_workflows(id);
+alter table disposal_decisions
+  add constraint disposal_decisions_workflow_fk
+  foreign key (approval_workflow_id) references approval_workflows(id);
+alter table e_archive_export_packages
+  add constraint e_archive_export_packages_workflow_fk
+  foreign key (approval_workflow_id) references approval_workflows(id);

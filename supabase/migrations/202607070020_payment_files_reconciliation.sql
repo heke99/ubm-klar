@@ -176,6 +176,26 @@ create table recovery_claim_links (
   unique (claim_kind, claim_id, linked_kind, linked_id)
 );
 
+-- Deferred FKs from domain migrations (tables created before payment tables existed)
+alter table provider_payment_accounts
+  add constraint provider_payment_accounts_registry_fk
+  foreign key (registry_id) references payment_recipient_registry(id);
+alter table lss_payment_batches
+  add constraint lss_payment_batches_payment_file_fk
+  foreign key (payment_file_id) references payment_files(id);
+alter table lss_payments
+  add constraint lss_payments_recipient_registry_fk
+  foreign key (recipient_registry_id) references payment_recipient_registry(id);
+alter table ea_payment_batches
+  add constraint ea_payment_batches_payment_file_fk
+  foreign key (payment_file_id) references payment_files(id);
+alter table ea_payments
+  add constraint ea_payments_recipient_registry_fk
+  foreign key (recipient_registry_id) references payment_recipient_registry(id);
+alter table ea_payment_account_references
+  add constraint ea_payment_account_references_registry_fk
+  foreign key (registry_id) references payment_recipient_registry(id);
+
 alter table payment_files enable row level security;
 alter table payment_file_rows enable row level security;
 alter table payment_recipient_registry enable row level security;

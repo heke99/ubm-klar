@@ -8,7 +8,8 @@ create table support_access_sessions (
   support_case_reference text not null, -- control-plane ticket id (no PII)
   requested_by_support_user text not null,
   approved_by uuid references user_profiles(id),
-  approval_workflow_id uuid references approval_workflows(id),
+  -- FK to approval_workflows added in 202607070019
+  approval_workflow_id uuid,
   scope text not null check (scope in
     ('technical_status','import_status','integration_status','queue_status','schema_errors','logs_no_pii')),
   reason text not null check (length(reason) >= 10),
@@ -37,7 +38,8 @@ create table break_glass_sessions (
   initiated_by uuid not null references user_profiles(id),
   reason text not null check (length(reason) >= 20),
   incident_reference text,
-  approval_workflow_id uuid references approval_workflows(id),
+  -- FK to approval_workflows added in 202607070019
+  approval_workflow_id uuid,
   scope text not null,
   starts_at timestamptz not null default now(),
   expires_at timestamptz not null,

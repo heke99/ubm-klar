@@ -166,7 +166,8 @@ create table provider_payment_accounts (
   account_reference text not null,
   valid_from date not null default current_date,
   valid_to date,
-  registry_id uuid references payment_recipient_registry(id)
+  -- FK to payment_recipient_registry added in 202607070020
+  registry_id uuid
 );
 
 create table provider_status_history (
@@ -308,7 +309,8 @@ create table invoice_validation_results (
 create table lss_payment_batches (
   id uuid primary key default gen_random_uuid(),
   batch_reference text not null unique,
-  payment_file_id uuid references payment_files(id),
+  -- FK to payment_files added in 202607070020
+  payment_file_id uuid,
   scheduled_date date,
   status text not null default 'created' check (status in
     ('created','approved','sent','completed','cancelled')),
@@ -327,7 +329,8 @@ create table lss_payments (
   status text not null default 'created' check (status in
     ('created','pending_approval','approved','sent','paid','rejected','reversed','paused',
      'cancelled','stopped','recovery_started')),
-  recipient_registry_id uuid references payment_recipient_registry(id),
+  -- FK to payment_recipient_registry added in 202607070020
+  recipient_registry_id uuid,
   created_at timestamptz not null default now()
 );
 

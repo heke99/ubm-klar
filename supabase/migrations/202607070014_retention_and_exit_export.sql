@@ -38,7 +38,8 @@ create table retention_actions (
   action text not null check (action in ('deleted','anonymized','archived','held','reviewed')),
   legal_hold_blocked boolean not null default false,
   executed_by uuid,
-  approval_workflow_id uuid references approval_workflows(id),
+  -- FK to approval_workflows added in 202607070019
+  approval_workflow_id uuid,
   executed_at timestamptz not null default now()
 );
 
@@ -50,7 +51,8 @@ create table exit_exports (
   id uuid primary key default gen_random_uuid(),
   export_number text not null unique,
   requested_by uuid not null references user_profiles(id),
-  approval_workflow_id uuid references approval_workflows(id),
+  -- FK to approval_workflows added in 202607070019
+  approval_workflow_id uuid,
   scope text[] not null default array[
     'structured_data','documents','document_metadata','audit_logs','data_access_logs',
     'ubm_exports_receipts','control_cases','rule_configs','import_history','mappings',

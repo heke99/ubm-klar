@@ -80,7 +80,8 @@ create table ubm_export_proposals (
   status text not null default 'draft' check (status in
     ('draft','eligibility_blocked','in_review','approved','rejected','packaged','sent','receipt_received','closed')),
   created_by uuid,
-  approval_workflow_id uuid references approval_workflows(id),
+  -- FK to approval_workflows added in 202607070019
+  approval_workflow_id uuid,
   legal_source_key text,
   legal_source_version text,
   rule_set_version text,

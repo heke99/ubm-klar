@@ -10,6 +10,7 @@ export default tseslint.config(
       '**/node_modules/**',
       '**/coverage/**',
       '**/.turbo/**',
+      '**/next-env.d.ts',
     ],
   },
   js.configs.recommended,

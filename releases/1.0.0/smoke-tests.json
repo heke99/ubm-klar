@@ -1,0 +1,65 @@
+{
+  "release": "1.0.0",
+  "tests": [
+    {
+      "name": "core tables exist",
+      "sql": "select count(*)::text from information_schema.tables where table_name in ('persons','municipality_profile','audit_events','documents')",
+      "expectContains": "4"
+    },
+    {
+      "name": "lss domain tables exist",
+      "sql": "select count(*)::text from information_schema.tables where table_name in ('lss_decisions','assistance_providers','provider_invoices','lss_payments')",
+      "expectContains": "4"
+    },
+    {
+      "name": "economic assistance tables exist",
+      "sql": "select count(*)::text from information_schema.tables where table_name in ('ea_households','ea_decisions','ea_payments','ea_verified_income')",
+      "expectContains": "4"
+    },
+    {
+      "name": "ubm tables exist",
+      "sql": "select count(*)::text from information_schema.tables where table_name in ('ubm_requests','ubm_export_proposals','ubm_submissions','ubm_notifications')",
+      "expectContains": "4"
+    },
+    {
+      "name": "roles are seeded",
+      "sql": "select count(*)::text from roles",
+      "expectContains": "20"
+    },
+    {
+      "name": "risk rules are seeded",
+      "sql": "select count(*)::text from risk_rule_definitions",
+      "expectContains": "50"
+    },
+    {
+      "name": "production readiness gates are seeded",
+      "sql": "select count(*)::text from production_readiness_gates",
+      "expectContains": "14"
+    },
+    {
+      "name": "rls enabled on persons",
+      "sql": "select relrowsecurity::text from pg_class where relname = 'persons'",
+      "expectContains": "t"
+    },
+    {
+      "name": "rls enabled on ubm export proposals",
+      "sql": "select relrowsecurity::text from pg_class where relname = 'ubm_export_proposals'",
+      "expectContains": "t"
+    },
+    {
+      "name": "recurring 2029 phase is disabled by default",
+      "sql": "select enabled::text from ubm_phase_configurations where phase_key = 'phase_2_recurring_2029'",
+      "expectContains": "f"
+    },
+    {
+      "name": "audit events are append-only",
+      "sql": "select tgname from pg_trigger where tgname = 'audit_events_no_update'",
+      "expectContains": "audit_events_no_update"
+    },
+    {
+      "name": "maker-checker trigger installed",
+      "sql": "select tgname from pg_trigger where tgname = 'approval_steps_maker_checker'",
+      "expectContains": "approval_steps_maker_checker"
+    }
+  ]
+}

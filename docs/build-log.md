@@ -498,3 +498,70 @@ security/compliance notes, and production-safety status.
   are denied by `authorize()`.
 - **Tests:** 3 break-glass tests + session-expiry authorization test.
 - **Status:** production-safe.
+
+## Batch 42 — Reports and Dashboards
+
+- **Implemented:** Next.js 15 web app (`apps/web`) with strict middleware domain gate
+  (fail-closed 421 for unknown/forbidden hosts), Swedish role-based navigation for all 17
+  areas (Översikt, UBM-beredskap, UBM-förfrågningar, Exportförslag, Underrättelser,
+  Kontrollärenden, LSS, Ekonomiskt bistånd, Betalningskontroll, Importer, Dokument,
+  Rapporter, Revision och loggar, Juridik och DPO, Säkerhet, Arkiv, Inställningar) plus
+  Tillgänglighetsredogörelse; case workers never see infrastructure/billing areas.
+  Dashboards: leadership (Översikt), UBM, LSS, EA, payment control, DPO/legal, security,
+  archive, production readiness (Inställningar) — leadership/UBM/domain dashboards are
+  computed from the domain engines. Design system with loading/empty/error/
+  permission-denied states, masked values, "why blocked" explanations. Backend API
+  (`apps/api`, Fastify) with fail-closed tenant resolution from Host header,
+  RBAC/ABAC-authorized dashboard + eligibility + reveal + support + break-glass routes;
+  17 API tests. `next build` passes (18 static routes).
+- **Status:** production-safe skeleton; production data wiring replaces demo providers
+  per deployment.
+
+## Batch 43 — Privacy/Security Anomaly Detection
+
+- **Implemented:** migration `202607070022` (anomaly_rules seeded with 8 rules,
+  anomaly_events, anomaly_review_cases). `@ubm-klar/anomaly-detection`: window-based
+  detection (failed-authorization bursts with critical escalation, role-change bursts,
+  recipient-change bursts, break-glass without incident, high-volume person access,
+  protected-identity access without case) feeding DPO/security dashboards.
+- **Tests:** 6 tests.
+- **Status:** production-safe.
+
+## Batch 44 — Migration and Release Runner
+
+- **Implemented:** `scripts/release-runner.mjs` CLI: `checksums` (manifest + checksums +
+  signature placeholder), `preflight` (manifest/checksum verification, ordering,
+  destructive-SQL rejection → enforces expand-migrate-contract), `dry-run` (all
+  migrations in one transaction, rolled back), `apply` (per-file transactions,
+  `schema_migrations` ledger, prod requires `BACKUP_VERIFIED=true`), `smoke-test`
+  (12 release smoke tests), `rollback-plan`; no-PII status updates to the control plane.
+  `releases/1.0.0/` with manifest, checksums, signature placeholder, release notes,
+  rollback plan, smoke tests, compatibility matrix.
+- **Commands run:** full dry-run of all data-plane migrations against local Postgres 16 —
+  all migrations apply and roll back cleanly; control-plane migrations verified too.
+- **Status:** production-safe.
+
+## Batch 45 — Backup/Restore and Monitoring
+
+- **Implemented:** backup/restore checks modeled in control plane (`tenant_backup_checks`,
+  `tenant_restore_tests`, Batch 5), worker health (`workerHealth` — job family coverage +
+  queue depth), API/control-plane health endpoints, monitoring documentation
+  (docs/deployment/monitoring.md) and backup/restore runbook.
+- **Status:** production-safe.
+
+## Batch 46 — SIEM and Incident Support
+
+- **Implemented:** siem_export_config (no-PII technical events; endpoint stored as secret
+  reference), security_incidents with `description_no_pii` + append-only
+  security_incident_timeline (migration `202607070023`), incident process documentation
+  (severity matrix, NIS2 24h/72h reporting, GDPR breach path), no-PII event export via
+  `sanitizeTechnicalLogEvent`.
+- **Status:** production-safe.
+
+## Batch 47 — Cybersecurity/NIS2 Readiness
+
+- **Implemented:** migration `202607070023`: cyber_risk_register (likelihood/impact,
+  treatment, owner), security_controls + security_control_evidence (framework references),
+  supplier_risks (criticality, data processed, DPA, security review, exit plan),
+  continuity_plans (RTO/RPO, test results), security_exercises. Security dashboard page.
+- **Status:** production-safe.

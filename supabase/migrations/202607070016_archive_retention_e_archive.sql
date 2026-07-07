@@ -46,7 +46,8 @@ create table disposal_decisions (
   classification_key text not null references archive_classifications(classification_key),
   scope_description text not null,
   decided_by uuid not null,
-  approval_workflow_id uuid references approval_workflows(id),
+  -- FK to approval_workflows added in 202607070019
+  approval_workflow_id uuid,
   decided_at timestamptz not null default now(),
   executed_at timestamptz,
   entity_count integer,
@@ -65,7 +66,8 @@ create table e_archive_export_packages (
   content_hash_sha256 text not null,
   storage_bucket text not null default 'archive-exports',
   storage_path text,
-  approval_workflow_id uuid references approval_workflows(id),
+  -- FK to approval_workflows added in 202607070019
+  approval_workflow_id uuid,
   created_by uuid not null,
   created_at timestamptz not null default now(),
   delivered_at timestamptz,
