@@ -186,3 +186,51 @@ security/compliance notes, and production-safety status.
   aggregation, batch reports with per-check counts.
 - **Tests:** 13 engine tests.
 - **Status:** production-safe.
+
+## Batch 15 — Rule Engine and Payment Control Foundation
+
+- **Implemented:** `@ubm-klar/rule-engine`: versioned risk rules with registry statuses
+  (draft rules never run), latest-allowed-version selection, explainable flags carrying
+  rule key + version + legal source version + evidence references + amount at risk,
+  dry-run mode, severity overrides. `@ubm-klar/payment-control-engine`: payment status
+  state machine (all 11 statuses, stop/pause require maker-checker workflow + reason).
+- **Tests:** 6 rule-engine + 4 payment-status tests.
+- **Status:** production-safe.
+
+## Batch 16 — Maker-Checker Approval Workflows
+
+- **Implemented:** `@ubm-klar/approval-workflows`: ordered approval steps per workflow
+  kind (ubm_export, document_export, payment_recipient_change, payment_stop, break_glass,
+  exit_export, e_archive_export, disposal_decision, go_live, rule_configuration_change);
+  invariants: creator can never approve own workflow, one person cannot approve two steps,
+  strict step order, immutable decisions, rejection terminates. Migration `202607070019`
+  adds the same guard at DB level (trigger `app.enforce_maker_checker`) plus append-only
+  approval_audit_log.
+- **Tests:** 10 workflow tests covering every invariant.
+- **Status:** production-safe.
+
+## Batch 17 — Control Case Management
+
+- **Implemented:** control case state machine in `@ubm-klar/payment-control-engine`:
+  sources (risk_flag, ubm_notification, manual, import_error, payment_anomaly,
+  access_anomaly), automatic case creation from high/critical non-dry-run flags,
+  lifecycle open→assigned→investigating→awaiting_decision→decided→closed with full
+  status history, outcomes (recovery_claim, payment_stopped, no_action, police_report,
+  corrected_source_data, other_action), outcome required before closing decided cases.
+  Case tables land in migration `202607070006` (shared across domains). APIs/UI in the
+  api/web batches.
+- **Tests:** 5 case lifecycle tests.
+- **Status:** production-safe core; API/UI wiring follows in dashboards phase.
+
+## Batch 18 — Payment Files and Reconciliation
+
+- **Implemented:** migration `202607070020`: payment_files, payment_file_rows,
+  payment_recipient_registry (verified accounts, person XOR organization constraint),
+  payment_account_change_logs (append-only, approval-workflow reference), payment_blocklists,
+  payment_status_history (append-only), payment_pause_decisions, payment_stop_actions,
+  payment_reconciliation_runs/results, recovery_claim_links. `@ubm-klar/reconciliation-engine`:
+  full reconciliation (blocklist, in-file duplicates, decision matching, amount mismatch,
+  decision-period check, recovery-claim conflict, registry account mismatch, account change
+  within configurable window) with severities and evidence references.
+- **Tests:** 10 reconciliation tests.
+- **Status:** production-safe.
