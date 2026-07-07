@@ -1,0 +1,14 @@
+{
+  "product": "UBM Klar",
+  "version": "1.0.0",
+  "status": "scaffold",
+  "migrations": [
+    "202607070001_core_init.sql",
+    "202607070002_control_plane_no_pii.sql"
+  ],
+  "requiresDryRun": true,
+  "requiresBackupCheck": true,
+  "requiresSmokeTest": true,
+  "requiresRollbackPlan": true,
+  "piiAllowedInControlPlane": false
+}
