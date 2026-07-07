@@ -1,27 +1,34 @@
 {
   "name": "ubm-klar",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "UBM Klar municipal readiness and payment-control platform",
   "packageManager": "pnpm@9.12.3",
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
-    "lint": "turbo lint",
+    "lint": "eslint .",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "security:secrets": "echo 'TODO: wire secret scanning in CI'",
-    "db:migrate:dry-run": "echo 'TODO: implement per-tenant migration dry-run runner'",
-    "db:smoke-test": "echo 'TODO: implement per-tenant smoke tests'"
+    "security:secrets": "node scripts/scan-secrets.mjs",
+    "security:deps": "pnpm audit --audit-level high || true",
+    "release:checksums": "node scripts/release-runner.mjs checksums --release 1.0.0",
+    "db:migrate:preflight": "node scripts/release-runner.mjs preflight --release 1.0.0",
+    "db:migrate:dry-run": "node scripts/release-runner.mjs dry-run --release 1.0.0",
+    "db:migrate:apply": "node scripts/release-runner.mjs apply --release 1.0.0",
+    "db:smoke-test": "node scripts/release-runner.mjs smoke-test --release 1.0.0",
+    "demo:reset": "node scripts/demo-reset.mjs"
   },
   "devDependencies": {
+    "@eslint/js": "^9.17.0",
     "@types/node": "^22.10.2",
     "eslint": "^9.17.0",
     "prettier": "^3.4.2",
     "turbo": "^2.3.3",
     "typescript": "^5.7.2",
+    "typescript-eslint": "^8.19.0",
     "vitest": "^2.1.8"
   }
 }

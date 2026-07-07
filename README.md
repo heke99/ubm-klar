@@ -56,21 +56,14 @@ releases/
   release package metadata and migration manifests
 ```
 
-## First Cursor task
+## Documentation
 
-Open `docs/cursor/UBM_KLAR_CURSOR_PROMPT.md` and follow it batch by batch.
-
-Cursor must after every batch summarize:
-
-- what was implemented
-- files changed
-- migrations added
-- tests added
-- commands run
-- remaining work
-- environment variables needed
-- security/compliance notes
-- whether the batch is production-safe or needs hardening
+- [Architecture overview](docs/architecture/overview.md)
+- [Domain and brand rules](docs/architecture/domain-rules.md)
+- [Build log per batch](docs/build-log.md)
+- `docs/` contains security, GDPR, DPIA, procurement, deployment, incident-response,
+  support, accessibility, archive, e-archive, user-manual, onboarding, legal-source and
+  exit-plan documentation.
 
 ## Local setup
 
