@@ -1,0 +1,15 @@
+{
+  "name": "@ubm-klar/web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "echo 'TODO: wire Next.js dev server'",
+    "build": "tsc -p tsconfig.json --noEmit",
+    "lint": "echo 'TODO: add web lint rules'",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
