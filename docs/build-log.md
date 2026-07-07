@@ -140,3 +140,49 @@ security/compliance notes, and production-safety status.
   shipped defaults for core fields, document types, UBM exports, SIEM integration.
 - **Tests:** 5 registry tests including fail-closed behaviour.
 - **Status:** production-safe.
+
+## Batch 11 — Document Vault
+
+- **Implemented:** migration `202607070004`: storage_buckets_config (all nine buckets,
+  public access structurally impossible via CHECK constraint), documents (hash, malware
+  scan status, redaction linkage), document_export_approvals (approver ≠ requester DB
+  constraint, reference-first export modes), document_access_events (append-only),
+  document_redaction_jobs. `@ubm-klar/document-vault`: bucket policies (roles, mime
+  allowlists, size limits, PII flags), upload validation (magic bytes, traversal guard,
+  sha256), export gate (references first; full documents only after approval; redaction
+  precondition). `@ubm-klar/redaction-engine`: rule-based masking (personnummer via Luhn,
+  account numbers) with post-redaction verification.
+- **Tests:** 16 tests across vault and redaction.
+- **Status:** production-safe.
+
+## Batch 12 — Import Engine
+
+- **Implemented:** `@ubm-klar/import-engine`: RFC4180-style CSV parser (`;`/`,`), JSON
+  array parser, flat XML parser, Excel adapter abstraction, format detection, file
+  hashing, mapping templates with transforms (date_iso, amount_sek, personnummer
+  normalize), required-field validation, mapping wizard suggestions, import validation
+  reports with loaded/partially_loaded/rejected statuses.
+- **Tests:** 14 parser/mapping/report tests.
+- **Status:** production-safe.
+
+## Batch 13 — System of Record and Data Lineage
+
+- **Implemented:** migration `202607070021`: system_of_record_definitions,
+  source_record_links, data_conflicts (masked values only), reconciliation_statuses,
+  data_lineage_records, record_hashes, export_hashes. `@ubm-klar/data-lineage`:
+  completeness rules (imported data requires source record link), entity lineage check
+  (feeds UBM eligibility), system-of-record resolution with validity windows and
+  field-over-entity precedence. `@ubm-klar/evidence-chain`: hash-linked append-only
+  evidence chains per subject with tamper verification.
+- **Tests:** 12 lineage + evidence chain tests.
+- **Status:** production-safe.
+
+## Batch 14 — Data Quality Engine
+
+- **Implemented:** `@ubm-klar/data-quality-engine`: full shared check catalogue (26
+  checks incl. personnummer format with Luhn + synthetic-demo exemption, payment/decision
+  consistency, lineage, classification, legal basis, purpose, UBM mapping, recipient
+  verification, SSO role mapping, DPO/legal approval), all ten result statuses, severity
+  aggregation, batch reports with per-check counts.
+- **Tests:** 13 engine tests.
+- **Status:** production-safe.

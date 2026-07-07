@@ -1,1 +1,2 @@
-export const PACKAGE_NAME = '@ubm-klar/document-vault';
+export * from './buckets';
+export * from './vault';

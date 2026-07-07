@@ -314,6 +314,9 @@ importers:
 
   packages/redaction-engine:
     dependencies:
+      '@ubm-klar/config':
+        specifier: workspace:*
+        version: link:../config
       '@ubm-klar/shared-types':
         specifier: workspace:*
         version: link:../shared-types

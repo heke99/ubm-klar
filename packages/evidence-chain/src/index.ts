@@ -1,1 +1,1 @@
-export const PACKAGE_NAME = '@ubm-klar/evidence-chain';
+export * from './evidence-chain';

@@ -1,1 +1,1 @@
-export const PACKAGE_NAME = '@ubm-klar/redaction-engine';
+export * from './redaction';

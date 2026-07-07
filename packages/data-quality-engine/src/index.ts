@@ -1,1 +1,2 @@
-export const PACKAGE_NAME = '@ubm-klar/data-quality-engine';
+export * from './checks';
+export * from './engine';
