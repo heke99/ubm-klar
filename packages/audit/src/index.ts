@@ -1,1 +1,1 @@
-export const PACKAGE_NAME = '@ubm-klar/audit';
+export * from './audit-log';

@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "@ubm-klar/shared-types": "workspace:*",
-    "@ubm-klar/audit": "workspace:*"
+    "@ubm-klar/audit": "workspace:*",
+    "@ubm-klar/config": "workspace:*"
   },
   "devDependencies": {
     "vitest": "^2.1.8"

@@ -1,1 +1,2 @@
-export const PACKAGE_NAME = '@ubm-klar/access-control';
+export * from './permissions';
+export * from './authorize';

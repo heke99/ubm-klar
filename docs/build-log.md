@@ -80,3 +80,63 @@ security/compliance notes, and production-safety status.
 - **Tests:** provisioning API tests (step ordering, full run, prod refusal for shared mode).
 - **Status:** production-safe skeleton; live Supabase project creation is an operator runbook
   action (see docs/deployment) by design — the control plane never holds data-plane secrets.
+
+## Batch 6 — Data Plane Schema Foundation
+
+- **Implemented:** data-plane migration `202607070001_core_init.sql`: `app` schema with
+  session helpers (`app.current_user_id`, `app.current_roles`, `app.is_no_pii_session`),
+  municipality_profile (single row — one data plane per municipality), committees,
+  departments, units, source_systems, integration_connections, import_batches,
+  import_errors, persons (with `is_synthetic` demo marker, protected identity levels),
+  person_identifiers, protected_identity_events, organizations, representatives,
+  contact_persons. RLS enabled deny-by-default on all sensitive tables with a
+  restrictive policy blocking no-PII sessions from person tables. `supabase/config.toml`
+  for local development.
+- **Status:** production-safe foundation.
+
+## Batch 7 — Auth and Access Control
+
+- **Implemented:** migration `202607070002`: identity_providers (Entra/SAML/OIDC/Supabase
+  fallback with `allowed_for_production`), user_profiles, external_identities,
+  roles/permissions/role_permissions, role_mappings (IdP claims → roles), user_roles,
+  access_scopes (ABAC). `@ubm-klar/access-control`: role→permission matrix for all 20
+  roles, `authorize()` combining RBAC + ABAC (module entitlement, department binding,
+  data classes, protected identity, session kind/expiry) + need-to-know. Migration
+  `202607070011` seeds the role and permission catalogue (Swedish display names).
+- **Tests:** 15 authorization tests (no-PII wall, JIT restrictions, session expiry,
+  module gating, need-to-know, protected identity, reason-required reveals).
+- **Security notes:** no-PII roles are structurally barred from PII permissions even if
+  the matrix were misconfigured (double check in `authorize`).
+- **Status:** production-safe.
+
+## Batch 8 — Internal Secrecy and Need-to-Know
+
+- **Implemented:** migration `202607070015`: case_access_grants (+ `app.has_case_access`),
+  purpose_bound_access (time-limited, purpose-required), access_review_findings,
+  `dpo_access_review` view. `@ubm-klar/internal-secrecy`: reason-required reveal
+  evaluation (min 10 chars, Swedish error copy), display masking helpers, curiosity-
+  browsing detection (high volume, off-hours, repeated same-person search, protected
+  identity without case, case opens without assignment).
+- **Tests:** 12 tests covering reveal gating, masking and all detection rules.
+- **Status:** production-safe.
+
+## Batch 9 — Audit and Data Access Logs
+
+- **Implemented:** migration `202607070003`: append-only (trigger-enforced) audit_events
+  with hash chaining columns, data_access_events, sensitive_field_reveals (reason
+  length constraint in DB). `@ubm-klar/audit`: hash-chained `AuditLogger` +
+  `verifyChain` tamper detection; full audit event key catalogue. `@ubm-klar/data-access-log`:
+  reason-required access kinds, `sanitizeTechnicalLogEvent` (no-PII helper for anything
+  leaving the data plane).
+- **Tests:** chain integrity/tamper tests, reason enforcement, technical log PII rejection.
+- **Status:** production-safe.
+
+## Batch 10 — Information Classification
+
+- **Implemented:** migration `202607070018`: information_classifications (C/I/A 0-3,
+  data class, masked_by_default, reveal_requires_reason, export_requires_approval) with
+  seeded defaults. `@ubm-klar/data-classification`: registry with fail-closed default
+  (unknown targets = confidential personal data). `@ubm-klar/information-classification`:
+  shipped defaults for core fields, document types, UBM exports, SIEM integration.
+- **Tests:** 5 registry tests including fail-closed behaviour.
+- **Status:** production-safe.

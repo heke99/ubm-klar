@@ -1,1 +1,2 @@
-export const PACKAGE_NAME = '@ubm-klar/internal-secrecy';
+export * from './reveal';
+export * from './curiosity-detection';
