@@ -438,3 +438,63 @@ security/compliance notes, and production-safety status.
   `202607070008`; notification/feedback tables shared with LSS in `202607070009`.
 - **Tests:** 3 mapping tests.
 - **Status:** production-safe.
+
+## Batch 37 — Onboarding and Readiness Score
+
+- **Implemented:** migration `202607070025` (onboarding_steps/progress/blockers/evidence/
+  assignments/readiness_scores/recommendations). `@ubm-klar/onboarding-engine`: full
+  8-stage guided program (organisation incl. DPO/security/system-owner/UBM/legal/finance
+  contacts; deployment incl. Model B/C, domains, environments, storage, keys,
+  backup/restore, SIEM, support model; authentication incl. Entra/OIDC/SAML, MFA, group/
+  role mapping, break-glass; source systems; data mapping incl. legal basis, purpose,
+  retention, classification, export eligibility; payment control; UBM readiness;
+  go-live incl. DPIA, PUB/DPA, security review, RLS/SSO/backup/restore/accessibility/
+  exit-export tests, UBM mock request+export, reconciliation test, final maker-checker
+  approval), all 8 readiness scores, blockers → critical recommendations, `isGoLiveReady`
+  gate (100% + no blockers).
+- **Tests:** 11 tests.
+- **Status:** production-safe.
+
+## Batch 38 — Archive, Retention and E-Archive
+
+- **Implemented:** migrations `202607070014` (retention_policies, data_subject_requests,
+  retention_actions append-only, exit_exports + items) and `202607070016`
+  (archive_classifications, archive_retention_rules, legal_holds, disposal_decisions with
+  maker-checker workflow reference, e_archive_export_packages with manifest + checksums,
+  append-only archive_audit_trail). `@ubm-klar/archive-engine`: retention evaluation
+  (legal holds always block, unmatched classifications go to manual review), e-archive
+  package builder with manifest/content sha256 and verification (tamper + missing entry
+  detection).
+- **Tests:** 7 tests.
+- **Status:** production-safe.
+
+## Batch 39 — Public Record and Secrecy Review
+
+- **Implemented:** migration `202607070017` (public_record_requests, request items,
+  secrecy_reviews with legal basis + motivation, disclosure_packages, append-only
+  disclosure_logs). `@ubm-klar/public-record-engine`: disclosure gate — every item needs
+  secrecy review, redacted releases require completed redaction, withheld items tracked
+  with legal basis; request status machine (cannot disclose without review).
+- **Tests:** 7 tests.
+- **Status:** production-safe.
+
+## Batch 40 — Support Mode without PII
+
+- **Implemented:** migration `202607070013` support_access_sessions (DB CHECK:
+  `pii_access = false` structurally, max 8h) + append-only support_access_events.
+  `createSupportSession` in `@ubm-klar/access-control`: municipality approval required,
+  no self-approval, reason min 10 chars, scoped (technical/import/integration/queue/
+  schema/logs-no-pii), time-limited with automatic expiry via `isSessionActive`. Support
+  JIT sessions are additionally barred from all PII permissions in `authorize()`.
+- **Tests:** 5 session tests + JIT authorization tests from Batch 7.
+- **Status:** production-safe.
+
+## Batch 41 — Break-glass
+
+- **Implemented:** break_glass_sessions (DB CHECK: reason ≥ 20 chars, max 4h) + append-only
+  break_glass_events (migration `202607070013`); `createBreakGlassSession` requires the
+  break_glass_admin role, substantive reason, duration cap; sessions start in
+  `post_review_status = pending` and surface in the DPO/legal dashboard; expired sessions
+  are denied by `authorize()`.
+- **Tests:** 3 break-glass tests + session-expiry authorization test.
+- **Status:** production-safe.
