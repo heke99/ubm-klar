@@ -382,6 +382,9 @@ importers:
       '@ubm-klar/approval-workflows':
         specifier: workspace:*
         version: link:../approval-workflows
+      '@ubm-klar/config':
+        specifier: workspace:*
+        version: link:../config
       '@ubm-klar/evidence-chain':
         specifier: workspace:*
         version: link:../evidence-chain

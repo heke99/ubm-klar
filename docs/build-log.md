@@ -294,3 +294,87 @@ security/compliance notes, and production-safety status.
   filters by period, provider and minimum severity. UI wiring in the web batches.
 - **Tests:** aggregation + filter tests.
 - **Status:** production-safe.
+
+## Batch 24 — Legal Source and UBM Obligation Registry
+
+- **Implemented:** migration `202607070027`: legal_sources, legal_source_versions,
+  regulatory_obligations(+versions), ubm_obligation_versions, ubm_effective_dates
+  (2026-07-01 and 2029-07-01 seeded), ubm_phase_configurations (phase 1 active, phase 2
+  disabled behind `ubm_recurring_reporting_2029`), ubm_guidance_documents,
+  ubm_schema_statuses; Swedish legal source seed (lag 2023:455/456, LSS, SoL, OSL, GDPR).
+  `@ubm-klar/legal-source-engine`: effective-date version resolution failing safe to
+  manual review (incl. `awaiting_official_specification`), phase activation checks.
+- **Tests:** 8 tests.
+- **Status:** production-safe.
+
+## Batch 25 — UBM Schema Registry
+
+- **Implemented:** migration `202607070008`: ubm_schemas, ubm_schema_versions (transport
+  profile + approval flags), ubm_schema_fields, ubm_code_lists,
+  ubm_schema_validation_rules, ubm_field_mappings; seeds internal working schemas for
+  request responses (active) and 2029 recurring placeholders
+  (`awaiting_official_specification`, transport `ubm_official_transport_pending`).
+  `@ubm-klar/ubm-schema-engine`: registry with usable-version resolution (never resolves
+  awaiting-spec schemas), record validation (types, code lists, max length, unknown-field
+  rejection to prevent over-sharing).
+- **Tests:** 8 tests.
+- **Security notes:** no official UBM format is hardcoded anywhere.
+- **Status:** production-safe.
+
+## Batch 26 — UBM Eligibility Engine
+
+- **Implemented:** `@ubm-klar/ubm-eligibility-engine`: all 27 eligibility questions
+  (request validity, subject, data relevance/necessity, five sensitive categories,
+  legal basis/purpose/lineage/classification, redaction/legal/DPO/maker-checker reviews,
+  document-reference preference, destination/schema/transport/receipt) producing all 13
+  outcome statuses with Swedish blocker texts; deny-by-default, `do_not_send` dominates.
+- **Tests:** 22 tests covering every question and outcome.
+- **Status:** production-safe.
+
+## Batch 27 — UBM Request Manager
+
+- **Implemented:** migration `202607070009` request tables (ubm_requests,
+  ubm_request_subjects with match confidence, ubm_request_items, ubm_request_deadlines,
+  ubm_request_reviews). `@ubm-klar/ubm-obligation-engine`: request validation (phase 1
+  effective-date gate, enabled intake channels only — official transport intake refused
+  until specs exist), full request status machine (received → … → closed) with strict
+  transitions.
+- **Tests:** 7 request tests.
+- **Status:** production-safe.
+
+## Batch 28 — UBM Export Manager
+
+- **Implemented:** migration `202607070009` export tables (ubm_export_proposals with
+  eligibility outcomes + legal/rule versions, ubm_export_rows with lineage/classification
+  flags, ubm_export_documents reference-first, ubm_submissions with manifest/payload
+  hashes + signature, ubm_receipts, ubm_approval_logs append-only).
+  `@ubm-klar/ubm-export-engine`: deterministic package builder (sorted rows, sha256
+  manifest+payload hashes, signer abstraction with explicit UNSIGNED placeholder),
+  `assertSendable` gate (maker-checker approved + transport approved + official transport
+  refused), receipt registration into the evidence chain.
+- **Tests:** 6 packaging/sending/receipt tests.
+- **Status:** production-safe.
+
+## Batch 29 — UBM Notification Inbox
+
+- **Implemented:** migration `202607070009` notification tables (ubm_notifications,
+  ubm_notification_confidence_scores, ubm_notification_manual_reviews,
+  ubm_notification_outcomes with the six outcome kinds, ubm_feedback_submissions).
+  `@ubm-klar/ubm-obligation-engine` notification matching: weighted confidence scoring
+  (personnummer, orgnr, decision number, payment reference, amount, date, name fragment),
+  auto-match at ≥0.9 with ambiguity guard (top-2 within 0.1 → manual review), manual
+  review band, no-match floor.
+- **Tests:** 5 matching tests.
+- **Status:** production-safe.
+
+## Batch 30 — Recurring UBM Reporting 2029
+
+- **Implemented:** migration `202607070030`: ubm_reporting_schedules (feature-flag key),
+  ubm_reporting_periods, ubm_recurring_dataset_definitions (status-gated),
+  ubm_recurring_exports, ubm_export_differences, ubm_period_closures (approval workflow +
+  receipt + evidence chain verification). `@ubm-klar/ubm-export-engine` recurring module:
+  `openReportingPeriod` triple gate (feature flag off by default, dataset status must be
+  pilot/active — awaiting_official_specification refused, not before 2029-07-01), period
+  state machine through closure, `diffExports` for previous-period differences.
+- **Tests:** 6 recurring tests.
+- **Status:** production-safe and feature-flagged off by default as required.

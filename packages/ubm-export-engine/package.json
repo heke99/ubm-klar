@@ -16,7 +16,8 @@
   "dependencies": {
     "@ubm-klar/shared-types": "workspace:*",
     "@ubm-klar/evidence-chain": "workspace:*",
-    "@ubm-klar/approval-workflows": "workspace:*"
+    "@ubm-klar/approval-workflows": "workspace:*",
+    "@ubm-klar/config": "workspace:*"
   },
   "devDependencies": {
     "vitest": "^2.1.8"

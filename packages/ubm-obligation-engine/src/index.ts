@@ -1,1 +1,2 @@
-export const PACKAGE_NAME = '@ubm-klar/ubm-obligation-engine';
+export * from './request-manager';
+export * from './notification-matching';

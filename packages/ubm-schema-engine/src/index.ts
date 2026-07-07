@@ -1,1 +1,1 @@
-export const PACKAGE_NAME = '@ubm-klar/ubm-schema-engine';
+export * from './schema-registry';
