@@ -1,1 +1,5 @@
-export const PACKAGE_NAME = '@ubm-klar/economic-assistance-domain';
+export * from './types';
+export * from './rules';
+export * from './demo-data';
+export * from './dashboard';
+export * from './ubm-mapping';

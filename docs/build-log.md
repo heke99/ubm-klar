@@ -378,3 +378,63 @@ security/compliance notes, and production-safety status.
   state machine through closure, `diffExports` for previous-period differences.
 - **Tests:** 6 recurring tests.
 - **Status:** production-safe and feature-flagged off by default as required.
+
+## Batch 31 — Economic Assistance Data Model
+
+- **Implemented:** migration `202607070007` with all 30 EA tables (person profiles,
+  households + members, applications + periods + documents, income sources with SSBTEK
+  codes, declared/verified income, housing + rent documents + address history, assets,
+  expenses, norm versions + rules, calculations + rows + deductions + approved amounts,
+  decisions + periods + basis, payment batches/payments/recipients/account references,
+  recovery claims + events, appeals). RLS enabled on every table.
+  `@ubm-klar/economic-assistance-domain` package with typed rule context.
+- **Status:** production-safe.
+
+## Batch 32 — Economic Assistance Demo Data
+
+- **Implemented:** deterministic generator (`generateEaDemoData`): 1000 persons / 600
+  households / 2000 applications / 2000 decisions / 3000 income records / 1000 housing
+  records / 2500 payments / 100 recovery claims by default, with intentional anomalies
+  (rejections with payments, missing attachments, account changes, protected households
+  without elevated access). Synthetic personnummer only (month 9x).
+- **Tests:** determinism, synthetic-PII checks, flag generation.
+- **Status:** production-safe.
+
+## Batch 33 — EA Intake and SSBTEK/GIF Metadata
+
+- **Implemented:** ea_income_sources seeded with SSBTEK codes (migration `202607070012`),
+  ea_declared_income / ea_verified_income carry `used_in_decision`, `legal_basis`,
+  `purpose`, `export_eligible` and `verification_source` (ssbtek/gif/skatteverket/FK/AF/
+  CSN/pensionsmyndigheten/a-kassa/bank/employer/manual) + verification references.
+- **Tests:** covered through UBM mapping tests (eligibility of income-backed rows).
+- **Status:** production-safe.
+
+## Batch 34 — Economic Assistance Payment Control
+
+- **Implemented:** all 25 EA risk rules (payment without decision, exceeds approved,
+  after validity, household duplicates, income period/verification/usage, member missing
+  from calculation, housing documentation, missing attachments, recovery-claim control,
+  shared accounts, account changes, superseded decisions, rejection payments,
+  reconsideration payments, household changes, recipients outside household, period
+  mismatches, payment file rows without approved decision, recipient changed after
+  decision, ignored verified income, protected household access, sensitive reveals).
+- **Tests:** 30 tests — every rule has a positive test plus clean-context zero-flag test.
+- **Status:** production-safe.
+
+## Batch 35 — Economic Assistance Dashboard
+
+- **Implemented:** `buildEaDashboard`: applications/decisions/approvals/rejections,
+  payments and paid totals, open recovery claims, verified income share (SSBTEK/GIF
+  metric), anomaly groups (income, household, housing, duplicates, accounts, rejection
+  with payment, payment file mismatches), flags by severity, amount at risk.
+- **Tests:** aggregation test on demo data.
+- **Status:** production-safe.
+
+## Batch 36 — UBM for Economic Assistance
+
+- **Implemented:** `mapEaDecisionToUbm`: schema-conformant export rows for the internal
+  EA working schema with eligibility exclusions (not export-eligible, not used in
+  decision, missing legal basis/purpose); EA export schema seeded in migration
+  `202607070008`; notification/feedback tables shared with LSS in `202607070009`.
+- **Tests:** 3 mapping tests.
+- **Status:** production-safe.
