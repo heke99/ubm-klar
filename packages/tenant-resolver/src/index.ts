@@ -1,1 +1,2 @@
-export const PACKAGE_NAME = '@ubm-klar/tenant-resolver';
+export * from './resolver';
+export * from './cache';

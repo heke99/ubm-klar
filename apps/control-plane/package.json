@@ -1,15 +1,20 @@
 {
   "name": "@ubm-klar/control-plane",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "echo 'TODO: wire control-plane dev server'",
+    "dev": "node --watch --experimental-strip-types src/main.ts",
     "build": "tsc -p tsconfig.json --noEmit",
-    "lint": "echo 'TODO: add control-plane lint rules'",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests"
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "@ubm-klar/config": "workspace:*",
+    "@ubm-klar/shared-types": "workspace:*",
+    "fastify": "^5.2.0"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.8"
+  }
 }
