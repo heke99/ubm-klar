@@ -234,3 +234,63 @@ security/compliance notes, and production-safety status.
   within configurable window) with severities and evidence references.
 - **Tests:** 10 reconciliation tests.
 - **Status:** production-safe.
+
+## Batch 19 — LSS Data Model
+
+- **Implemented:** migration `202607070005` with all 33 LSS tables
+  (lss_person_profiles → lss_recovery_events including personkreis assessments,
+  need assessments, basic/other needs, decision basis, appeals, providers, IVO permits,
+  contracts, payment accounts, status history, provider risk flags, assistants,
+  assignments, time reports + rows + approvals + anomalies, invoices + rows + links +
+  validation results, payment batches, payments, recipients, recovery claims + events),
+  RLS enabled on every table. Migration `202607070006` adds the shared risk rule registry,
+  risk_flags, control_cases (+assignments/notes/documents/decisions/events/status history,
+  append-only) and evidence_chain_entries. `@ubm-klar/lss-domain` package with typed rule
+  context.
+- **Status:** production-safe.
+
+## Batch 20 — LSS Demo Data
+
+- **Implemented:** deterministic seeded generator (`generateLssDemoData`, mulberry32 PRNG)
+  producing 500 persons / 1000 decisions / 100 providers / 2000 time reports / 1500
+  invoices / 3000 payments / 20 recovery claims / 10 UBM requests by default, with
+  intentional anomalies (~4% inflated invoices, missing decision links, expired IVO
+  permits, account changes) so demo flows produce risk flags. Synthetic personnummer use
+  month 90-98 (structurally impossible) and `is_synthetic` markers. `pnpm demo:reset`
+  regenerates JSON seeds.
+- **Tests:** determinism, volumes, synthetic-only PII, flag generation.
+- **Status:** production-safe (generator refuses nothing — but seeding is provisioning-
+  gated to demo/test environments).
+
+## Batch 21 — LSS Matching and Reconciliation
+
+- **Implemented:** `matchDecisions`: decision hours ↔ time reports ↔ invoices ↔ payments
+  ↔ provider ↔ IVO permit ↔ recipient verification per decision with issue lists
+  (over-invoicing, invoicing without reports, paid > invoiced, inactive provider,
+  missing permit, unverified recipient).
+- **Tests:** clean match + issue detection tests.
+- **Status:** production-safe.
+
+## Batch 22 — LSS Risk Rules
+
+- **Implemented:** all 25 LSS risk rules as versioned rule definitions (v1.0.0, status
+  active, legal source `lss_1993_387@2026-07-01`): payments outside decision period (1-2),
+  billed hours vs decision (3), missing time report (4), provider approval/IVO/orgnr
+  (5-7), assistant overlap/unreasonable hours (8-9), duplicate invoice/payment (10-11),
+  recovery-claim conflicts (12, 23), account change near payment (13), protected identity
+  protection gap (14), medical document misclassification (15), missing decision link (16),
+  recipient mismatch (17), ended decision invoicing (18), unapproved time report (19),
+  unusual hours increase (20), payment file unknown recipient (21), paid without approved
+  invoice (22), unreviewed provider flags (24), sensitive access without reason (25).
+- **Tests:** 30 tests — every rule has at least one positive and the catalogue has a
+  clean-context zero-flag test.
+- **Status:** production-safe.
+
+## Batch 23 — LSS Dashboard
+
+- **Implemented:** `buildLssDashboard`: decided/reported/invoiced hours, invoiced/paid
+  amounts, decisions with issues, flags by severity and rule (with amount at risk),
+  providers without active permit, unapproved time reports, open recovery claims;
+  filters by period, provider and minimum severity. UI wiring in the web batches.
+- **Tests:** aggregation + filter tests.
+- **Status:** production-safe.
