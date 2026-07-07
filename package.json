@@ -19,6 +19,7 @@
     "db:migrate:dry-run": "node scripts/release-runner.mjs dry-run --release 1.0.0",
     "db:migrate:apply": "node scripts/release-runner.mjs apply --release 1.0.0",
     "db:smoke-test": "node scripts/release-runner.mjs smoke-test --release 1.0.0",
+    "db:rls-test": "node scripts/rls-tests.mjs",
     "demo:reset": "node scripts/demo-reset.mjs"
   },
   "devDependencies": {

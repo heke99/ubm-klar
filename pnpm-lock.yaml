@@ -41,6 +41,12 @@ importers:
       '@ubm-klar/access-control':
         specifier: workspace:*
         version: link:../../packages/access-control
+      '@ubm-klar/approval-workflows':
+        specifier: workspace:*
+        version: link:../../packages/approval-workflows
+      '@ubm-klar/archive-engine':
+        specifier: workspace:*
+        version: link:../../packages/archive-engine
       '@ubm-klar/audit':
         specifier: workspace:*
         version: link:../../packages/audit
@@ -50,12 +56,18 @@ importers:
       '@ubm-klar/data-access-log':
         specifier: workspace:*
         version: link:../../packages/data-access-log
+      '@ubm-klar/data-lineage':
+        specifier: workspace:*
+        version: link:../../packages/data-lineage
       '@ubm-klar/data-quality-engine':
         specifier: workspace:*
         version: link:../../packages/data-quality-engine
       '@ubm-klar/economic-assistance-domain':
         specifier: workspace:*
         version: link:../../packages/economic-assistance-domain
+      '@ubm-klar/evidence-chain':
+        specifier: workspace:*
+        version: link:../../packages/evidence-chain
       '@ubm-klar/internal-secrecy':
         specifier: workspace:*
         version: link:../../packages/internal-secrecy
@@ -65,6 +77,15 @@ importers:
       '@ubm-klar/onboarding-engine':
         specifier: workspace:*
         version: link:../../packages/onboarding-engine
+      '@ubm-klar/payment-control-engine':
+        specifier: workspace:*
+        version: link:../../packages/payment-control-engine
+      '@ubm-klar/public-record-engine':
+        specifier: workspace:*
+        version: link:../../packages/public-record-engine
+      '@ubm-klar/reconciliation-engine':
+        specifier: workspace:*
+        version: link:../../packages/reconciliation-engine
       '@ubm-klar/rule-engine':
         specifier: workspace:*
         version: link:../../packages/rule-engine
@@ -80,6 +101,12 @@ importers:
       '@ubm-klar/ubm-eligibility-engine':
         specifier: workspace:*
         version: link:../../packages/ubm-eligibility-engine
+      '@ubm-klar/ubm-export-engine':
+        specifier: workspace:*
+        version: link:../../packages/ubm-export-engine
+      '@ubm-klar/ubm-obligation-engine':
+        specifier: workspace:*
+        version: link:../../packages/ubm-obligation-engine
       fastify:
         specifier: ^5.2.0
         version: 5.10.0

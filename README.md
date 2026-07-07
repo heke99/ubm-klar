@@ -69,12 +69,27 @@ releases/
 
 ```bash
 pnpm install
+pnpm build        # all packages + Next.js web app
 pnpm typecheck
 pnpm lint
-pnpm test
+pnpm test         # 36 packages, 300+ tests
+
+# database verification (requires a local PostgreSQL, e.g. deployments/docker)
+pnpm db:migrate:preflight
+pnpm db:migrate:dry-run -- --db postgresql://ubm:ubm@localhost/ubm_dataplane
+pnpm db:migrate:apply -- --db postgresql://ubm:ubm@localhost/ubm_dataplane
+pnpm db:smoke-test -- --db postgresql://ubm:ubm@localhost/ubm_dataplane
+pnpm db:rls-test -- --db postgresql://ubm:ubm@localhost/ubm_dataplane
+
+pnpm security:secrets   # secret scanner
 ```
 
-Most packages are currently scaffolded and should be implemented batch by batch.
+No environment variables are required for build/test. Deployment variables are
+documented in `.env.example` and `docs/deployment/`.
+
+See [docs/production-readiness-report.md](docs/production-readiness-report.md) for the
+release verification status and [docs/build-log.md](docs/build-log.md) for the
+batch-by-batch implementation log.
 
 ## Security rules
 

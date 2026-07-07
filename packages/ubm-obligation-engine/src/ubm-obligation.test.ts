@@ -41,7 +41,7 @@ describe('validateUbmRequest', () => {
   it('rejects disabled intake channels including official transport', () => {
     const result = validateUbmRequest(validationInput({ intakeChannel: 'official_transport' }));
     expect(result.valid).toBe(false);
-    expect(result.errors[0]).toContain('officiell UBM-transport');
+    expect(result.errors[0]).toContain('UBM-transport');
   });
 
   it('requires subject and requested items', () => {

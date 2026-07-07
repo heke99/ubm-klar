@@ -38,7 +38,8 @@ export interface NotificationMatchResult {
 }
 
 export const AUTO_MATCH_THRESHOLD = 0.9;
-export const REVIEW_THRESHOLD = 0.5;
+/** Any candidate scoring at or above this goes to a human instead of being dropped. */
+export const REVIEW_THRESHOLD = 0.2;
 
 export function scoreCandidate(
   hints: NotificationSubjectHints,

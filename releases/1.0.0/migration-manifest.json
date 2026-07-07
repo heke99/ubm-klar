@@ -1,6 +1,6 @@
 {
   "release": "1.0.0",
-  "generatedAt": "2026-07-07T20:03:00.688Z",
+  "generatedAt": "2026-07-07T20:12:58.240Z",
   "migrations": [
     {
       "name": "202607070001_core_init.sql",
@@ -37,6 +37,10 @@
     {
       "name": "202607070009_ubm_request_export_notification.sql",
       "sha256": "a9e15905aaad0206e9014f6a49c1a5debd0e693b93dbed2d897d4eaf5a6dfe5e"
+    },
+    {
+      "name": "202607070010_rls_policies.sql",
+      "sha256": "0cdafb1d1d6538bb98f1f79a5cf059e82649ca2f608ebee234388457fd15b1a2"
     },
     {
       "name": "202607070011_seed_default_roles.sql",
@@ -117,6 +121,10 @@
     {
       "name": "202607070030_recurring_ubm_reporting_2029.sql",
       "sha256": "415c5a58c4f056ecb23b7549250603f76bbb09c1d4689667e47bc315b36564cd"
+    },
+    {
+      "name": "202607070031_rls_policies_late.sql",
+      "sha256": "5d0071a842eec15e58ea598107c7771bd13ebaa203dbac8c9f8c9e52eec0067e"
     }
   ],
   "controlPlaneMigrations": [

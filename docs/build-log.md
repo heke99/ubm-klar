@@ -622,3 +622,60 @@ security/compliance notes, and production-safety status.
   migration `202607070014`; `exit-exports` bucket in the vault.
 - **Tests:** 5 tests.
 - **Status:** production-safe.
+
+## Batch 53 — Accessibility Hardening
+
+- **Implemented:** WCAG 2.1 AA / EN 301 549 support in the web app: skip-link, visible
+  focus ring, semantic landmarks/headings, table captions + header cells, status conveyed
+  with text + color, Swedish plain-language copy, loading/empty/error/permission-denied
+  states on every page, masked fields announced to screen readers with reveal
+  instructions; accessibility statement page (`/tillganglighet`) and per-municipality
+  statement template (docs/accessibility/accessibility-statement-template.md).
+- **Status:** production-safe; full AT-user audit is a go-live gate.
+
+## Batch 54 — Production Acceptance Gates
+
+- **Implemented:** migration `202607070024` with 14 seeded gates (DPIA, PUB/DPA, SSO,
+  MFA, RLS, backup, restore, SIEM, exit export, accessibility, archive, UBM mock,
+  reconciliation, go-live approval), production_readiness_evidence with waiver +
+  approval-workflow reference, `production_go_live_status` view whose `go_live_allowed`
+  blocks launch; `isGoLiveReady` (onboarding) requires 100% + no blockers; go-live is a
+  maker-checker workflow kind.
+- **Tests:** onboarding gate tests + smoke test verifying gate seeding.
+- **Status:** production-safe.
+
+## Batch 55 — Security Hardening
+
+- **Implemented:** migration `202607070010` + `202607070031`: least-privilege RLS
+  policies per role with restrictive no-PII blocks and protected-identity elevation;
+  `scripts/rls-tests.mjs` (9 live-database tests: anonymous/no-PII/support sessions see
+  nothing, case worker sees normal but not protected persons, DPO sees protected,
+  billing admin blocked from UBM, write denial); `scripts/scan-secrets.mjs` (service-role
+  JWTs, sb_secret, private keys, AWS/Stripe keys, credential URLs — clean over 301
+  files); dependency scan script (`pnpm security:deps`); security checklist
+  (docs/security/security-checklist.md); cross-tenant isolation covered by resolver leak
+  tests + per-tenant service-key tests + `no_shared_prod` DB constraint.
+- **Commands run:** full apply of all 31 migrations + smoke tests + RLS tests against
+  local Postgres 16 — all green.
+- **Status:** production-safe.
+
+## Batch 56 — End-to-End Demo Flows
+
+- **Implemented:** `apps/api/src/demo-flows.test.ts` — 10 end-to-end suites: LSS payment
+  control, LSS UBM request→blocked→lineage fix→review→maker-checker→package→receipt→
+  evidence chain, EA UBM mapping, reconciliation duplicate→recovery-claim conflict, UBM
+  notification→case→outcome, support without PII, break-glass with pending post-review,
+  public record secrecy review with redaction, e-archive + exit export verification,
+  onboarding readiness/go-live gating, EA payment control on demo data.
+- **Tests:** 10 e2e suites, all passing.
+- **Status:** production-safe.
+
+## Batch 57 — Final Production Readiness
+
+- **Implemented:** full verification run — `pnpm build` (36 tasks incl. Next.js, PASS),
+  `pnpm typecheck` (PASS), `pnpm lint` (PASS), `pnpm test` (36 packages PASS), migration
+  preflight + dry-run + apply + smoke tests + RLS tests against Postgres 16 (PASS),
+  secret scan (PASS). Final report: docs/production-readiness-report.md with acceptance
+  criteria mapping and pre-first-go-live hardening notes.
+- **Status:** release 1.0.0 production-safe; per-tenant go-live gated by the 14
+  production readiness gates.
