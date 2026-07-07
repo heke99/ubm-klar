@@ -1,0 +1,15 @@
+{
+  "name": "@ubm-klar/worker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "echo 'TODO: wire worker runtime'",
+    "build": "tsc -p tsconfig.json --noEmit",
+    "lint": "echo 'TODO: add worker lint rules'",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
