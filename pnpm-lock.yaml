@@ -228,6 +228,9 @@ importers:
 
   packages/archive-engine:
     dependencies:
+      '@ubm-klar/approval-workflows':
+        specifier: workspace:*
+        version: link:../approval-workflows
       '@ubm-klar/shared-types':
         specifier: workspace:*
         version: link:../shared-types
@@ -248,6 +251,9 @@ importers:
 
   packages/billing-engine:
     dependencies:
+      '@ubm-klar/config':
+        specifier: workspace:*
+        version: link:../config
       '@ubm-klar/shared-types':
         specifier: workspace:*
         version: link:../shared-types

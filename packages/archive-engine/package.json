@@ -14,7 +14,8 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@ubm-klar/shared-types": "workspace:*"
+    "@ubm-klar/shared-types": "workspace:*",
+    "@ubm-klar/approval-workflows": "workspace:*"
   },
   "devDependencies": {
     "vitest": "^2.1.8"

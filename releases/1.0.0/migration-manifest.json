@@ -1,6 +1,6 @@
 {
   "release": "1.0.0",
-  "generatedAt": "2026-07-07T19:41:33.898Z",
+  "generatedAt": "2026-07-07T20:03:00.688Z",
   "migrations": [
     {
       "name": "202607070001_core_init.sql",
@@ -99,8 +99,20 @@
       "sha256": "b5d47a1413d1c515371203e01cbafa753d50634ab048a7cff838659788e033aa"
     },
     {
+      "name": "202607070026_commercial_billing_entitlements.sql",
+      "sha256": "104c1b2a01420420c49ebd5673e497b6b3cd87a8f3fb208f1653a3eecdcff46f"
+    },
+    {
       "name": "202607070027_legal_source_and_ubm_obligation_versions.sql",
       "sha256": "aa597edbfc7e7dd2742ff6afdec4b73bd4566c43a9df5f2ffed8537171a1586b"
+    },
+    {
+      "name": "202607070028_ai_guardrails.sql",
+      "sha256": "8611b4c4f303c7a65746fc015942340f06bce23e26f95383c2f283e645ac53bd"
+    },
+    {
+      "name": "202607070029_tenant_provisioning.sql",
+      "sha256": "465110f03de07a44958cee2576ffc8032de34e5f84b7d735c0f920671d0499a2"
     },
     {
       "name": "202607070030_recurring_ubm_reporting_2029.sql",

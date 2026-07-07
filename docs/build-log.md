@@ -565,3 +565,60 @@ security/compliance notes, and production-safety status.
   supplier_risks (criticality, data processed, DPA, security review, exit plan),
   continuity_plans (RTO/RPO, test results), security_exercises. Security dashboard page.
 - **Status:** production-safe.
+
+## Batch 48 — Compliance Package
+
+- **Implemented:** GDPR records of processing with legal bases per module
+  (docs/gdpr/legal-basis-and-purposes.md), DPIA template with UBM-specific risk matrix
+  (docs/dpia/dpia-template.md), PUB/DPA template (docs/gdpr/pub-dpa-template.md),
+  subprocessor list template (docs/gdpr/subprocessors.md); legal basis/purpose fields and
+  data_subject_requests already in migrations 0007/0014; retention policies in 0014.
+- **Status:** production-safe documentation package.
+
+## Batch 49 — Outsourcing and Procurement Package
+
+- **Implemented:** responsibility matrix across Model B/C1/C2/C3
+  (docs/procurement/responsibility-matrix.md), cloud/outsourcing assessment support
+  (docs/procurement/cloud-outsourcing.md), security appendix, SLA appendix (three tiers,
+  RPO/RTO), exit appendix (docs/exit-plan/exit-appendix.md), municipality-owned data
+  plane manual (docs/deployment/municipality-owned-data-plane-manual.md), support model
+  doc (docs/support/support-model.md).
+- **Status:** production-safe.
+
+## Batch 50 — Commercial Billing and Entitlements
+
+- **Implemented:** migration `202607070026` (billing_plans + versions, subscriptions +
+  items, entitlements, usage_metrics, billing_events, invoices_no_pii, contract_terms,
+  implementation_packages, support_packages; the five packages seeded).
+  `@ubm-klar/billing-engine`: plan catalogue (Start/LSS/EB/Kontroll/Enterprise),
+  entitlement resolution with validity windows, feature gating with explanations,
+  module mapping, billing events/usage metrics that reject citizen data via
+  `assertNoPii`. Control-plane billing tables from Batch 3; platform superadmin data is
+  no-PII by construction.
+- **Tests:** 7 tests.
+- **Status:** production-safe.
+
+## Batch 51 — AI Assistance Guardrails
+
+- **Implemented:** migration `202607070028`: ai_model_configurations (PII in prompts
+  structurally impossible without approved provider — DB CHECK), ai_prompt_policy
+  (8 allowed use cases seeded), ai_suggestions (marking forced to `suggestion_only`,
+  `requires_human_review` forced true by CHECK), ai_source_references, ai_review_status,
+  ai_guardrail_flags, append-only ai_assistance_logs. `checkAiRequest`/`checkAiOutput`
+  in `@ubm-klar/config`: forbidden use cases, protected identity always blocked,
+  security-classified blocked, classification ceilings, PII scans of prompt and output,
+  decision-language detection, mandatory source references.
+- **Tests:** 12 guardrail tests.
+- **Status:** production-safe; AI disabled by default (feature flag + provider `disabled`).
+
+## Batch 52 — Exit Export
+
+- **Implemented:** `buildExitExport`/`verifyExitExport` in `@ubm-klar/archive-engine`:
+  13-scope takeout (structured data, documents + metadata, audit + access logs, UBM
+  exports + receipts, control cases, rule configs, import history, mappings, source
+  record links, lineage, evidence chain) with per-item sha256 + manifest hash,
+  completeness tracking, tamper detection; requires an approved `exit_export`
+  maker-checker workflow (wrong-kind and pending workflows rejected). Tables in
+  migration `202607070014`; `exit-exports` bucket in the vault.
+- **Tests:** 5 tests.
+- **Status:** production-safe.
