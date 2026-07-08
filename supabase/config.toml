@@ -1,10 +1,14 @@
+# Supabase local development configuration for the UBM Klar data plane.
+# Each municipality gets its OWN Supabase project (Model B) or owns its own
+# infrastructure (Model C). This config is for local development and demo only.
+
 project_id = "ubm-klar-local"
 
 [api]
 enabled = true
 port = 54321
-schemas = ["public"]
-extra_search_path = ["public", "extensions"]
+schemas = ["public", "app"]
+extra_search_path = ["public", "app"]
 max_rows = 1000
 
 [db]
@@ -18,9 +22,13 @@ port = 54323
 [auth]
 enabled = true
 site_url = "http://localhost:3000"
-additional_redirect_urls = ["http://localhost:3000"]
-jwt_expiry = 3600
 enable_signup = false
+
+[auth.external.azure]
+enabled = false
+client_id = "env(ENTRA_CLIENT_ID)"
+secret = "env(ENTRA_CLIENT_SECRET)"
+url = "env(ENTRA_ISSUER)"
 
 [storage]
 enabled = true

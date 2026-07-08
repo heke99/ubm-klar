@@ -56,32 +56,40 @@ releases/
   release package metadata and migration manifests
 ```
 
-## First Cursor task
+## Documentation
 
-Open `docs/cursor/UBM_KLAR_CURSOR_PROMPT.md` and follow it batch by batch.
-
-Cursor must after every batch summarize:
-
-- what was implemented
-- files changed
-- migrations added
-- tests added
-- commands run
-- remaining work
-- environment variables needed
-- security/compliance notes
-- whether the batch is production-safe or needs hardening
+- [Architecture overview](docs/architecture/overview.md)
+- [Domain and brand rules](docs/architecture/domain-rules.md)
+- [Build log per batch](docs/build-log.md)
+- `docs/` contains security, GDPR, DPIA, procurement, deployment, incident-response,
+  support, accessibility, archive, e-archive, user-manual, onboarding, legal-source and
+  exit-plan documentation.
 
 ## Local setup
 
 ```bash
 pnpm install
+pnpm build        # all packages + Next.js web app
 pnpm typecheck
 pnpm lint
-pnpm test
+pnpm test         # 36 packages, 300+ tests
+
+# database verification (requires a local PostgreSQL, e.g. deployments/docker)
+pnpm db:migrate:preflight
+pnpm db:migrate:dry-run -- --db postgresql://ubm:ubm@localhost/ubm_dataplane
+pnpm db:migrate:apply -- --db postgresql://ubm:ubm@localhost/ubm_dataplane
+pnpm db:smoke-test -- --db postgresql://ubm:ubm@localhost/ubm_dataplane
+pnpm db:rls-test -- --db postgresql://ubm:ubm@localhost/ubm_dataplane
+
+pnpm security:secrets   # secret scanner
 ```
 
-Most packages are currently scaffolded and should be implemented batch by batch.
+No environment variables are required for build/test. Deployment variables are
+documented in `.env.example` and `docs/deployment/`.
+
+See [docs/production-readiness-report.md](docs/production-readiness-report.md) for the
+release verification status and [docs/build-log.md](docs/build-log.md) for the
+batch-by-batch implementation log.
 
 ## Security rules
 

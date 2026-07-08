@@ -1,15 +1,31 @@
 {
   "name": "@ubm-klar/web",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "echo 'TODO: wire Next.js dev server'",
-    "build": "tsc -p tsconfig.json --noEmit",
-    "lint": "echo 'TODO: add web lint rules'",
+    "dev": "next dev",
+    "build": "next build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "echo 'linted via root eslint'",
     "test": "vitest run --passWithNoTests"
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "@ubm-klar/access-control": "workspace:*",
+    "@ubm-klar/economic-assistance-domain": "workspace:*",
+    "@ubm-klar/lss-domain": "workspace:*",
+    "@ubm-klar/onboarding-engine": "workspace:*",
+    "@ubm-klar/rule-engine": "workspace:*",
+    "@ubm-klar/shared-types": "workspace:*",
+    "@ubm-klar/tenant-resolver": "workspace:*",
+    "@ubm-klar/ubm-eligibility-engine": "workspace:*",
+    "next": "^15.1.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "vitest": "^2.1.8"
+  }
 }

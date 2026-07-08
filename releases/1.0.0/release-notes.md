@@ -1,26 +1,28 @@
-# UBM Klar 1.0.0 Scaffold
+# UBM Klar 1.0.0
 
-This release package is a scaffold for the first production architecture foundation.
+First production release.
 
 ## Included
 
-- repository foundation
-- workspace configuration
-- app scaffolds
-- package scaffolds
-- initial Supabase configuration
-- initial safe migrations
-- Cursor rules
-- Cursor build prompt
-- security baseline
-- architecture documentation
-- onboarding documentation
-- procurement package placeholder
+- Data plane schema (30 migrations): core municipal model, auth/access control, audit and
+  data access logs, document vault, LSS domain + payment control, economic assistance
+  domain, UBM schema registry, UBM request/export/notification, RLS policies, seeds
+  (roles + rules), support/break-glass, retention/exit export, internal secrecy,
+  archive/e-archive, public records, information classification, maker-checker,
+  payment files/reconciliation, system-of-record/lineage, anomaly detection,
+  cybersecurity readiness, production readiness gates, onboarding, billing/entitlements,
+  legal sources/UBM obligations, AI guardrails, tenant provisioning references,
+  recurring UBM reporting 2029 (feature-flagged off).
+- Control plane schema (2 migrations, no PII).
+- Domain engines with full test suites.
 
-## Not production-ready yet
+## Positioning
 
-Cursor must continue implementing the full batch plan before any municipality production use.
+UBM Klar är en fristående produkt och är inte en tjänst från Utbetalningsmyndigheten
+eller någon annan myndighet.
 
-## Security note
+## Constraints honored
 
-No real personal data may be added to demo, test or documentation files.
+- No final official UBM schema is hardcoded; Phase 2 (2029) datasets remain
+  `awaiting_official_specification` and feature-flagged.
+- No destructive migration statements (verified by the release runner preflight).

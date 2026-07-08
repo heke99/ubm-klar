@@ -1,14 +1,140 @@
 {
-  "product": "UBM Klar",
-  "version": "1.0.0",
-  "status": "scaffold",
+  "release": "1.0.0",
+  "generatedAt": "2026-07-07T20:12:58.240Z",
   "migrations": [
-    "202607070001_core_init.sql",
-    "202607070002_control_plane_no_pii.sql"
+    {
+      "name": "202607070001_core_init.sql",
+      "sha256": "75a8cabdedd9fd8dfbd32a3629b79ec6f1018779ed6a9ae26ea7e9ed73d31ce4"
+    },
+    {
+      "name": "202607070002_auth_and_access_control.sql",
+      "sha256": "5a392d0d42ab8eaa5b4287830b73f7ad3933a7bd04aa04ae3c8375dab1623618"
+    },
+    {
+      "name": "202607070003_audit_and_data_access_logs.sql",
+      "sha256": "b67279144241bad1fbba0a01765572d447648dda66fa26dbb3e71bb68da008b0"
+    },
+    {
+      "name": "202607070004_documents_and_storage_metadata.sql",
+      "sha256": "b48b5e8d237d5eff21229200b59b6ad17930f5c01e3150f6873415e9c00017f2"
+    },
+    {
+      "name": "202607070005_lss_domain.sql",
+      "sha256": "78579524468415fe858f867e77ec3a752a507f78121cdbe87bb17479c93e13e7"
+    },
+    {
+      "name": "202607070006_lss_payment_control.sql",
+      "sha256": "167acb2f2e41aa528acca95b706576c3016c272ca1d5f5987fbd3b537849a903"
+    },
+    {
+      "name": "202607070007_economic_assistance_domain.sql",
+      "sha256": "372b7fbb4de6f65bfd2759528f32a648c1651ebd265cb9008ab7ea656f19785c"
+    },
+    {
+      "name": "202607070008_ubm_schema_registry.sql",
+      "sha256": "df3925f7eb2505957f7a4ef59ea01f452400df2c3c28ba4175bd562498271aae"
+    },
+    {
+      "name": "202607070009_ubm_request_export_notification.sql",
+      "sha256": "a9e15905aaad0206e9014f6a49c1a5debd0e693b93dbed2d897d4eaf5a6dfe5e"
+    },
+    {
+      "name": "202607070010_rls_policies.sql",
+      "sha256": "0cdafb1d1d6538bb98f1f79a5cf059e82649ca2f608ebee234388457fd15b1a2"
+    },
+    {
+      "name": "202607070011_seed_default_roles.sql",
+      "sha256": "9770dc619a88585a8c6cba424df02da8ffddf06e0841212189a1aa6735709ef0"
+    },
+    {
+      "name": "202607070012_seed_default_rules.sql",
+      "sha256": "2a657ffe7040e2f7e61195999e9fdded3f069f413fe9529495803586c3870efb"
+    },
+    {
+      "name": "202607070013_support_access_and_break_glass.sql",
+      "sha256": "085308b7f5b01e8d25e8e847c4dfe22dbc4ecee7f8a5efa44a603515e899fe8f"
+    },
+    {
+      "name": "202607070014_retention_and_exit_export.sql",
+      "sha256": "cdb6de15ba860df4135c10c84dacfcc3fe54eac7f9dd4a8c7ca958839fb25d29"
+    },
+    {
+      "name": "202607070015_internal_secrecy_need_to_know.sql",
+      "sha256": "1eb9886c2a1d725cc8488449a50b7018fe2207380d6a2f5ee4abd8ddf6b33d79"
+    },
+    {
+      "name": "202607070016_archive_retention_e_archive.sql",
+      "sha256": "fb24962c3f78c679e8a50f2ee6f7e769362fa1ebc2edc34b22b55dab28a2481c"
+    },
+    {
+      "name": "202607070017_public_records_secrecy_review.sql",
+      "sha256": "b64faaa861302364d122c7bd4d564954b2a62bb5321a83e3caf4f0c40f54d81b"
+    },
+    {
+      "name": "202607070018_information_classification.sql",
+      "sha256": "1804162778f087b433bc36374e5721b3bf0d3bd6648c61a4c9d36adff1f86eb1"
+    },
+    {
+      "name": "202607070019_maker_checker_approvals.sql",
+      "sha256": "e2daabac42427a5be373c94884c9137dcfe120361b0ce49d0aaef2ef85e4c5bb"
+    },
+    {
+      "name": "202607070020_payment_files_reconciliation.sql",
+      "sha256": "471e01719e042781b87327c055bcd5b9f638864e736dc3dfccd5097fd3153147"
+    },
+    {
+      "name": "202607070021_system_of_record_data_lineage.sql",
+      "sha256": "e7d0251d85396f079e0617e2cced1b5f146fe2df61a6c0a563c8a39f4b9baa21"
+    },
+    {
+      "name": "202607070022_anomaly_detection.sql",
+      "sha256": "116958f4aa464e90118df3a9eb7ecc6621a68b33a12ac768347ace151c722b0b"
+    },
+    {
+      "name": "202607070023_cybersecurity_readiness.sql",
+      "sha256": "3c8102ca606ad48b44868e6044431037c123ede233da1a2fcdf6d040c28fb43e"
+    },
+    {
+      "name": "202607070024_production_readiness_gates.sql",
+      "sha256": "75119fa8c6ae8fb61be9338982097181a39b407ea52c0c6bc3ba9686143f2353"
+    },
+    {
+      "name": "202607070025_onboarding_and_readiness_scores.sql",
+      "sha256": "b5d47a1413d1c515371203e01cbafa753d50634ab048a7cff838659788e033aa"
+    },
+    {
+      "name": "202607070026_commercial_billing_entitlements.sql",
+      "sha256": "104c1b2a01420420c49ebd5673e497b6b3cd87a8f3fb208f1653a3eecdcff46f"
+    },
+    {
+      "name": "202607070027_legal_source_and_ubm_obligation_versions.sql",
+      "sha256": "aa597edbfc7e7dd2742ff6afdec4b73bd4566c43a9df5f2ffed8537171a1586b"
+    },
+    {
+      "name": "202607070028_ai_guardrails.sql",
+      "sha256": "8611b4c4f303c7a65746fc015942340f06bce23e26f95383c2f283e645ac53bd"
+    },
+    {
+      "name": "202607070029_tenant_provisioning.sql",
+      "sha256": "465110f03de07a44958cee2576ffc8032de34e5f84b7d735c0f920671d0499a2"
+    },
+    {
+      "name": "202607070030_recurring_ubm_reporting_2029.sql",
+      "sha256": "415c5a58c4f056ecb23b7549250603f76bbb09c1d4689667e47bc315b36564cd"
+    },
+    {
+      "name": "202607070031_rls_policies_late.sql",
+      "sha256": "5d0071a842eec15e58ea598107c7771bd13ebaa203dbac8c9f8c9e52eec0067e"
+    }
   ],
-  "requiresDryRun": true,
-  "requiresBackupCheck": true,
-  "requiresSmokeTest": true,
-  "requiresRollbackPlan": true,
-  "piiAllowedInControlPlane": false
+  "controlPlaneMigrations": [
+    {
+      "name": "0001_control_plane_init.sql",
+      "sha256": "b490ffe7c23ff1b7870b69b0a5a3d037c4fbcb79067b9a2bc0123e2426b4cab5"
+    },
+    {
+      "name": "0002_tenant_provisioning.sql",
+      "sha256": "a188e51f13b7937278e6418f8c6f6a9148e50534d45bf33353ef36c8dd26aa29"
+    }
+  ]
 }

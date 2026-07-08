@@ -1,0 +1,8 @@
+node_modules
+dist
+.next
+coverage
+pnpm-lock.yaml
+.turbo
+releases/*/checksums.txt
+releases/*/signature.sig

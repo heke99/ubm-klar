@@ -1,15 +1,41 @@
 {
   "name": "@ubm-klar/api",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "echo 'TODO: wire API dev server'",
+    "dev": "node --watch --experimental-strip-types src/main.ts",
     "build": "tsc -p tsconfig.json --noEmit",
-    "lint": "echo 'TODO: add API lint rules'",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests"
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "@ubm-klar/access-control": "workspace:*",
+    "@ubm-klar/approval-workflows": "workspace:*",
+    "@ubm-klar/archive-engine": "workspace:*",
+    "@ubm-klar/audit": "workspace:*",
+    "@ubm-klar/config": "workspace:*",
+    "@ubm-klar/data-access-log": "workspace:*",
+    "@ubm-klar/data-lineage": "workspace:*",
+    "@ubm-klar/data-quality-engine": "workspace:*",
+    "@ubm-klar/economic-assistance-domain": "workspace:*",
+    "@ubm-klar/evidence-chain": "workspace:*",
+    "@ubm-klar/internal-secrecy": "workspace:*",
+    "@ubm-klar/lss-domain": "workspace:*",
+    "@ubm-klar/onboarding-engine": "workspace:*",
+    "@ubm-klar/payment-control-engine": "workspace:*",
+    "@ubm-klar/public-record-engine": "workspace:*",
+    "@ubm-klar/reconciliation-engine": "workspace:*",
+    "@ubm-klar/rule-engine": "workspace:*",
+    "@ubm-klar/shared-types": "workspace:*",
+    "@ubm-klar/supabase-client": "workspace:*",
+    "@ubm-klar/tenant-resolver": "workspace:*",
+    "@ubm-klar/ubm-eligibility-engine": "workspace:*",
+    "@ubm-klar/ubm-export-engine": "workspace:*",
+    "@ubm-klar/ubm-obligation-engine": "workspace:*",
+    "fastify": "^5.2.0"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.8"
+  }
 }
