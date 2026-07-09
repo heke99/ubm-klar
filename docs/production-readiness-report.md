@@ -112,3 +112,33 @@ re-run and updated after every batch.
 - Baseline command status at audit time: `pnpm db:migrate:preflight` FAILS (manifest
   drift, P0-1). Other checks not re-run in this batch (docs only).
 - No code changes.
+
+## Pilot Batch 1 — release, CI, quality gates (2026-07-09)
+
+Closes P0-1 (manifest drift), P0-2 (unsigned release), P0-13 (weak CI), P0-14 (secret
+scanner), and adds interim fail-closed startup guards toward P0-3/P0-4/P0-10.
+
+Acceptance evidence (all run locally on Node 22.14 / pnpm 9.12.3 / Postgres 16.14):
+
+| Check                         | Command                               | Result                                        |
+| ----------------------------- | ------------------------------------- | --------------------------------------------- |
+| Strict install                | `pnpm install --frozen-lockfile=true` | PASS                                          |
+| Format                        | `pnpm format:check`                   | PASS                                          |
+| Typecheck                     | `pnpm typecheck` (36 tasks)           | PASS                                          |
+| Lint                          | `pnpm lint`                           | PASS                                          |
+| Tests (vitest 3)              | `pnpm test` (36 tasks)                | PASS                                          |
+| Secret scan                   | `pnpm security:secrets` (308 files)   | PASS                                          |
+| Dependency audit (blocking)   | `pnpm security:deps`                  | PASS (0 high/critical; 1 moderate documented) |
+| Migration preflight           | `pnpm db:migrate:preflight`           | PASS (31 migrations)                          |
+| Migration dry-run             | `db:migrate:dry-run --db …`           | PASS                                          |
+| Migration apply + smoke + RLS | apply, 12 smoke tests, 9 RLS tests    | PASS                                          |
+| Production safety             | `pnpm production:safety-check`        | PASS (7/7)                                    |
+| Unsigned release in prod      | `ENVIRONMENT=prod verify-signature`   | REFUSED (fail closed, as required)            |
+| Signed release in prod        | ed25519 key pair round-trip           | PASS; wrong key REFUSED                       |
+
+Notes:
+
+- The remaining moderate advisory is in the dev-only test toolchain (esbuild via
+  vite dev server), not shipped to production runtimes.
+- The repository release `1.0.0` remains UNSIGNED on disk, which is valid for
+  local/demo/test only; stage/prod pipelines must sign with the vendor release key.

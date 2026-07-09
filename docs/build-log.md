@@ -713,3 +713,55 @@ runtime behaviour.
   release 1.0.0 is production-safe; it is a well-tested domain layer with demo runtime
   wiring, and must not be piloted with real data until P0 blockers are closed.
 - **Status:** needs hardening (baseline established; no production claims).
+
+## Pilot Batch 1 — Release, CI, and quality gates
+
+- **Implemented:**
+  - Removed the orphan `supabase/migrations/202607070002_control_plane_no_pii.sql`
+    (duplicate control-plane scaffold in the data plane; canonical schema lives in
+    `apps/control-plane/migrations/`); regenerated release 1.0.0 manifest + checksums;
+    `pnpm db:migrate:preflight` passes again.
+  - Preflight now rejects duplicate migration timestamps (deterministic ordering) and
+    enforces the release signature policy.
+  - Real ed25519 release signing: `release-runner sign` / `verify-signature` commands,
+    `RELEASE_SIGNING_PRIVATE_KEY`/`RELEASE_SIGNING_PUBLIC_KEY` env vars. local/demo/test
+    may run unsigned; stage/prod fail closed on unsigned or unverifiable releases
+    (verified: signed release passes with correct key, fails with wrong key).
+  - CI rewritten: strict `pnpm install --frozen-lockfile=true`, `format:check`,
+    `typecheck`, `lint`, `test`, `security:secrets`, blocking `security:deps`,
+    `db:migrate:preflight`, `production:safety-check`; a second job runs migration
+    dry-run/apply/smoke/RLS tests against a Postgres 16 service container; a separate
+    non-blocking job publishes the full dependency report.
+  - `security:deps` no longer swallows failures (`|| true` removed; a separate
+    `security:deps:report` remains informational). Upgraded vitest 2.1 -> 3.2 and pinned
+    `vite >= 6.4.3` via pnpm override, clearing the critical (vitest UI RCE) and high
+    (vite fs.deny bypass) advisories; only 1 moderate advisory remains (documented).
+  - `scripts/scan-secrets.mjs` rewritten: works without git (filesystem walk fallback),
+    skips binaries/build output, allowlists documented safe examples by line context,
+    adds GitHub/Slack/AWS-pair token patterns; verified to catch a planted key in a
+    git-less directory.
+  - `scripts/production-safety-check.mjs` + `pnpm production:safety-check`: boots each
+    app entry point with production env and asserts refusal (api without tenant
+    directory, control-plane without database, worker without queue), asserts unsigned
+    releases are refused in prod, manifest consistency, and signature file presence.
+  - Interim fail-closed guards added to `apps/api/src/main.ts`,
+    `apps/control-plane/src/main.ts`, `apps/worker/src/main.ts` (replaced by full typed
+    env validation in Pilot Batch 2).
+  - Repo-wide Prettier pass — `format:check` is now enforced in CI.
+- **Files:** `scripts/release-runner.mjs`, `scripts/scan-secrets.mjs`,
+  `scripts/production-safety-check.mjs`, `.github/workflows/ci.yml`, `package.json`,
+  `releases/1.0.0/*`, `apps/*/src/main.ts`, all `package.json` vitest bumps.
+- **Migrations:** one file removed from the data plane set (never applied anywhere;
+  manifest never listed it). 31 data-plane migrations remain.
+- **Tests:** full suite green on vitest 3 (36 tasks). Migration dry-run + apply + 12
+  smoke tests + 9 RLS tests verified against local Postgres 16.
+- **Commands run:** `pnpm install --frozen-lockfile=true`, `pnpm format:check`,
+  `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm security:secrets`,
+  `pnpm security:deps`, `pnpm db:migrate:preflight`, `pnpm production:safety-check`,
+  `db:migrate:dry-run/apply/smoke-test/rls-test --db postgresql://…` — all pass.
+- **Remaining:** Pilot Batches 2–25.
+- **Env vars:** `RELEASE_SIGNING_PRIVATE_KEY` (CI/release pipeline only),
+  `RELEASE_SIGNING_PUBLIC_KEY` (stage/prod verification).
+- **Security notes:** no unsigned release can pass preflight/apply in stage/prod; CI
+  dependency audit now blocks on high/critical.
+- **Status:** production-safe for the release pipeline; apps still need Batches 2+.
