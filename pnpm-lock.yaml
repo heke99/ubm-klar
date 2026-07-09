@@ -71,6 +71,9 @@ importers:
       '@ubm-klar/data-quality-engine':
         specifier: workspace:*
         version: link:../../packages/data-quality-engine
+      '@ubm-klar/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@ubm-klar/economic-assistance-domain':
         specifier: workspace:*
         version: link:../../packages/economic-assistance-domain

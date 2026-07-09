@@ -47,6 +47,9 @@ import {
   type EaRuleContext,
 } from '@ubm-klar/economic-assistance-domain';
 import type { DataClass, SafeTenantConfig } from '@ubm-klar/shared-types';
+import { randomUUID } from 'node:crypto';
+import type { TenantDataPlanePool } from './data-plane';
+import { createRepositories, type Repositories } from './repositories';
 
 /**
  * UBM Klar backend API. All sensitive operations run here, server-side:
@@ -79,6 +82,14 @@ export interface ApiServerOptions {
   /** TTL for positive tenant lookups (failures are never cached). */
   cacheTtlMs?: number;
   auth?: ApiAuthOptions;
+  /** Per-tenant data plane connections (server-side service credentials). */
+  dataPlane?: TenantDataPlanePool;
+  /**
+   * Whether synthetic demo data may be served at all (environment-level gate;
+   * loadAppConfig forbids this in stage/prod). The tenant must ALSO opt in via
+   * the demo_data_enabled feature flag.
+   */
+  demoDataEnabled?: boolean;
 }
 
 export interface AuthenticatedContext {
@@ -90,6 +101,8 @@ declare module 'fastify' {
   interface FastifyRequest {
     tenant?: SafeTenantConfig | undefined;
     subject?: AccessSubject | undefined;
+    correlationId?: string;
+    repositories?: Repositories | undefined;
   }
 }
 
@@ -99,6 +112,7 @@ const DEMO_TENANT: SafeTenantConfig = Object.freeze({
   municipalityName: 'Demokommun',
   deploymentMode: 'local_demo_shared',
   environment: 'demo',
+  tenantStatus: 'pilot',
   activeModules: [
     'platform_foundation',
     'municipal_data_plane',
@@ -118,7 +132,7 @@ const DEMO_TENANT: SafeTenantConfig = Object.freeze({
   dataPlaneUrl: 'http://localhost:54321',
   dataPlanePublishableKey: 'sb_publishable_demo',
   authProvider: 'supabase_auth',
-  featureFlags: {},
+  featureFlags: { demo_data_enabled: true },
 } satisfies SafeTenantConfig);
 
 /** Plain unsigned header parsing — local/demo/test only (see ApiAuthOptions). */
@@ -245,8 +259,13 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
   const auditLogger = new AuditLogger(new InMemoryAuditSink());
   const accessLogger = new DataAccessLogger(new InMemoryDataAccessSink());
 
-  // --- Tenant resolution: strict, fail-closed -------------------------------
+  // --- Correlation id, tenant resolution (strict, fail-closed), auth --------
   app.addHook('onRequest', async (request, reply) => {
+    const incoming = request.headers['x-correlation-id'];
+    request.correlationId =
+      typeof incoming === 'string' && /^[0-9a-f-]{8,64}$/i.test(incoming) ? incoming : randomUUID();
+    reply.header('x-correlation-id', request.correlationId);
+
     if (request.url === '/health') return;
     const host = request.headers.host ?? '';
     if (options.allowDemoTenant && /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host)) {
@@ -265,6 +284,8 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
         throw error;
       }
     }
+    const db = options.dataPlane?.resolve(request.tenant);
+    request.repositories = db ? createRepositories(db) : undefined;
     try {
       request.subject = await resolveSubject(request, authOptions);
     } catch (error) {
@@ -278,6 +299,30 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
       throw error;
     }
   });
+
+  /** No-PII technical log with correlation id (safe for vendor telemetry). */
+  function logTechnical(request: FastifyRequest, code: string, context: Record<string, unknown>) {
+    const event = sanitizeTechnicalLogEvent({
+      level: 'info',
+      code,
+      message: code,
+      context: { ...context, correlationId: request.correlationId },
+    });
+    console.info(JSON.stringify(event));
+  }
+
+  /**
+   * Demo data gate: environment allows it (never stage/prod), the tenant is a
+   * local/demo/test tenant, AND the tenant's demo_data_enabled flag is on.
+   */
+  function demoAllowed(tenant: SafeTenantConfig | undefined): boolean {
+    if (!tenant) return false;
+    return (
+      options.demoDataEnabled === true &&
+      ['local', 'demo', 'test'].includes(tenant.environment) &&
+      tenant.featureFlags['demo_data_enabled'] === true
+    );
+  }
 
   function requirePermission(
     request: FastifyRequest,
@@ -323,26 +368,37 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
   }));
 
   // --- Dashboards ------------------------------------------------------------
-  const lssDemo = generateLssDemoData({
-    personCount: 100,
-    decisionCount: 200,
-    providerCount: 20,
-    timeReportCount: 400,
-    invoiceCount: 300,
-    paymentCount: 600,
-    recoveryClaimCount: 10,
-    ubmRequestCount: 5,
-  });
-  const eaDemo = generateEaDemoData({
-    personCount: 200,
-    householdCount: 120,
-    applicationCount: 300,
-    decisionCount: 300,
-    incomeCount: 400,
-    housingCount: 150,
-    paymentCount: 400,
-    recoveryClaimCount: 15,
-  });
+  // Demo data is generated lazily and ONLY when the demo gate allows it; it can
+  // never be constructed on a stage/prod server (demoDataEnabled is forced off
+  // there by loadAppConfig).
+  let lssDemoCache: ReturnType<typeof generateLssDemoData> | undefined;
+  let eaDemoCache: ReturnType<typeof generateEaDemoData> | undefined;
+  function lssDemo() {
+    lssDemoCache ??= generateLssDemoData({
+      personCount: 100,
+      decisionCount: 200,
+      providerCount: 20,
+      timeReportCount: 400,
+      invoiceCount: 300,
+      paymentCount: 600,
+      recoveryClaimCount: 10,
+      ubmRequestCount: 5,
+    });
+    return lssDemoCache;
+  }
+  function eaDemo() {
+    eaDemoCache ??= generateEaDemoData({
+      personCount: 200,
+      householdCount: 120,
+      applicationCount: 300,
+      decisionCount: 300,
+      incomeCount: 400,
+      housingCount: 150,
+      paymentCount: 400,
+      recoveryClaimCount: 15,
+    });
+    return eaDemoCache;
+  }
   const lssEngine = new RuleEngine<LssRuleContext>();
   lssEngine.registerAll(ALL_LSS_RULES);
   const eaEngine = new RuleEngine<EaRuleContext>();
@@ -351,8 +407,22 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
   app.get('/dashboards/lss', async (request, reply) => {
     if (!requirePermission(request, reply, 'case.lss.read', { kind: 'dashboard', module: 'lss' }))
       return;
-    const { flags } = lssEngine.run(lssDemo.context);
-    return buildLssDashboard(lssDemo.context, flags);
+    if (request.repositories) {
+      const stats = await request.repositories.lss.dashboardStats();
+      logTechnical(request, 'DASHBOARD_LSS_READ', { dataSource: 'data_plane' });
+      return { dataSource: 'data_plane', stats };
+    }
+    if (demoAllowed(request.tenant)) {
+      const demo = lssDemo();
+      const { flags } = lssEngine.run(demo.context);
+      return {
+        dataSource: 'demo',
+        demoDashboard: buildLssDashboard(demo.context, flags),
+      };
+    }
+    // No data plane configured and demo not allowed: honest empty state.
+    logTechnical(request, 'DASHBOARD_LSS_READ', { dataSource: 'empty' });
+    return { dataSource: 'empty', stats: undefined };
   });
 
   app.get('/dashboards/economic-assistance', async (request, reply) => {
@@ -363,8 +433,70 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
       })
     )
       return;
-    const { flags } = eaEngine.run(eaDemo.context);
-    return buildEaDashboard(eaDemo.context, flags);
+    if (request.repositories) {
+      const stats = await request.repositories.ea.dashboardStats();
+      logTechnical(request, 'DASHBOARD_EA_READ', { dataSource: 'data_plane' });
+      return { dataSource: 'data_plane', stats };
+    }
+    if (demoAllowed(request.tenant)) {
+      const demo = eaDemo();
+      const { flags } = eaEngine.run(demo.context);
+      return {
+        dataSource: 'demo',
+        demoDashboard: buildEaDashboard(demo.context, flags),
+      };
+    }
+    logTechnical(request, 'DASHBOARD_EA_READ', { dataSource: 'empty' });
+    return { dataSource: 'empty', stats: undefined };
+  });
+
+  // --- Payment control and control cases (real data) --------------------------
+  app.get('/payment-control', async (request, reply) => {
+    if (!requirePermission(request, reply, 'payment.read', { kind: 'payment_control' })) return;
+    if (!request.repositories) {
+      return { dataSource: demoAllowed(request.tenant) ? 'demo' : 'empty', flags: [] };
+    }
+    const [summary, flags] = await Promise.all([
+      request.repositories.paymentControl.flagSummary(),
+      request.repositories.paymentControl.listFlags({ limit: 100 }),
+    ]);
+    return { dataSource: 'data_plane', summary, flags };
+  });
+
+  app.get('/control-cases', async (request, reply) => {
+    if (!requirePermission(request, reply, 'case.control.read', { kind: 'control_cases' })) return;
+    if (!request.repositories) {
+      return { dataSource: demoAllowed(request.tenant) ? 'demo' : 'empty', cases: [] };
+    }
+    const [cases, counts] = await Promise.all([
+      request.repositories.controlCases.list({ limit: 100 }),
+      request.repositories.controlCases.countByStatus(),
+    ]);
+    return { dataSource: 'data_plane', cases, counts };
+  });
+
+  app.get('/ubm/requests', async (request, reply) => {
+    if (!requirePermission(request, reply, 'ubm.request.read', { kind: 'ubm_request' })) return;
+    if (!request.repositories) {
+      return { dataSource: demoAllowed(request.tenant) ? 'demo' : 'empty', requests: [] };
+    }
+    const [requests, counts] = await Promise.all([
+      request.repositories.ubmRequests.list({ limit: 100 }),
+      request.repositories.ubmRequests.countByStatus(),
+    ]);
+    return { dataSource: 'data_plane', requests, counts };
+  });
+
+  app.get('/ubm/readiness', async (request, reply) => {
+    if (!requirePermission(request, reply, 'readiness.manage', { kind: 'readiness' })) return;
+    if (!request.repositories) {
+      return { dataSource: demoAllowed(request.tenant) ? 'demo' : 'empty', gates: [] };
+    }
+    const [gates, goLive] = await Promise.all([
+      request.repositories.readiness.listGates(),
+      request.repositories.readiness.goLiveStatus(),
+    ]);
+    return { dataSource: 'data_plane', gates, goLive };
   });
 
   // --- UBM eligibility -------------------------------------------------------

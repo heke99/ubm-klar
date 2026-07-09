@@ -105,14 +105,35 @@ describe('authorization', () => {
     expect(response.json().reasons).toBeDefined();
   });
 
-  it('serves the LSS dashboard to LSS case workers', async () => {
+  it('production tenant without a data plane gets an honest empty state, never demo stats', async () => {
     const response = await app.inject({
       method: 'GET',
       url: '/dashboards/lss',
       headers: caseworkerHeaders,
     });
     expect(response.statusCode).toBe(200);
-    expect(response.json().decidedHoursTotal).toBeGreaterThan(0);
+    expect(response.json().dataSource).toBe('empty');
+    expect(response.json().demoDashboard).toBeUndefined();
+  });
+
+  it('serves demo data only for the demo tenant when the environment allows it', async () => {
+    const demoApp = buildApiServer({ directory, allowDemoTenant: true, demoDataEnabled: true });
+    const response = await demoApp.inject({
+      method: 'GET',
+      url: '/dashboards/lss',
+      headers: { ...caseworkerHeaders, host: 'localhost' },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().dataSource).toBe('demo');
+    expect(response.json().demoDashboard.decidedHoursTotal).toBeGreaterThan(0);
+
+    // Same server, production tenant host: demo is still refused.
+    const prodTenant = await demoApp.inject({
+      method: 'GET',
+      url: '/dashboards/lss',
+      headers: caseworkerHeaders,
+    });
+    expect(prodTenant.json().dataSource).toBe('empty');
   });
 
   it('serves the EA dashboard to EA case workers only', async () => {

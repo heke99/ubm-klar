@@ -99,6 +99,15 @@ jobs:
       - name: RLS tests
         run: pnpm db:rls-test -- --db postgresql://ubm:ubm@localhost:54322/ubm_dataplane
 
+      - name: Create control plane test database
+        run: PGPASSWORD=ubm psql -h localhost -p 54322 -U ubm -d ubm_dataplane -c 'create database ubm_controlplane_test'
+
+      - name: Repository tests against live Postgres
+        env:
+          DATA_PLANE_TEST_DATABASE_URL: postgresql://ubm:ubm@localhost:54322/ubm_dataplane
+          CONTROL_PLANE_TEST_DATABASE_URL: postgresql://ubm:ubm@localhost:54322/ubm_controlplane_test
+        run: pnpm test
+
   dependency-report:
     name: Dependency report (non-blocking)
     runs-on: ubuntu-latest

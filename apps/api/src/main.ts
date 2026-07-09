@@ -1,6 +1,7 @@
 import { loadAppConfig, UnsafeProductionConfigError } from '@ubm-klar/config';
 import { OidcTokenVerifier } from '@ubm-klar/auth';
 import { buildApiServer, type ApiAuthOptions } from './server';
+import { TenantDataPlanePool } from './data-plane';
 import { ControlPlaneTenantDirectory, type TenantDirectory } from '@ubm-klar/tenant-resolver';
 
 const config = (() => {
@@ -74,6 +75,8 @@ const app = buildApiServer({
   allowDemoTenant: config.tenantResolver.allowDemoTenant,
   cacheTtlMs: config.tenantResolver.cacheTtlSeconds * 1000,
   auth: buildAuthOptions(),
+  dataPlane: new TenantDataPlanePool(),
+  demoDataEnabled: config.demo.demoDataEnabled,
 });
 
 app.listen({ port, host: '0.0.0.0' }).then(() => {
