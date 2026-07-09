@@ -24,7 +24,8 @@
     "db:migrate:apply": "node scripts/release-runner.mjs apply --release 1.0.0",
     "db:smoke-test": "node scripts/release-runner.mjs smoke-test --release 1.0.0",
     "db:rls-test": "node scripts/rls-tests.mjs",
-    "demo:reset": "node scripts/demo-reset.mjs"
+    "demo:reset": "node scripts/demo-reset.mjs",
+    "demo:pilot-seed": "node scripts/pilot-demo-seed.mjs"
   },
   "pnpm": {
     "overrides": {

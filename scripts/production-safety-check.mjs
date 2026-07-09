@@ -214,6 +214,18 @@ expectProductionRefusal(
 }
 
 {
+  // The pilot demo seed must refuse production environments outright.
+  const res = run('node', ['scripts/pilot-demo-seed.mjs', '--db', 'postgresql://invalid'], {
+    env: { APP_ENV: 'prod' },
+  });
+  record(
+    'demo seed: refuses production environments',
+    res.status !== 0 && `${res.stderr}`.includes('REFUSED'),
+    res.status !== 0 ? 'refused before touching any database' : 'seed did NOT refuse prod',
+  );
+}
+
+{
   // signature.sig must exist for the packaged release.
   record('release: signature file present', existsSync(join(root, 'releases/1.0.0/signature.sig')));
 }

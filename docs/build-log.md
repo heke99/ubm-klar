@@ -1622,3 +1622,31 @@ error`) so pages render honest states without leaking backend details.
 - **Remaining:** none.
 - **Env vars:** none new.
 - **Status:** production-safe.
+
+## Pilot Batch 23 — Demo data for the pilot (safe by design)
+
+- **Implemented:** `scripts/pilot-demo-seed.mjs` (+ `pnpm demo:pilot-seed`):
+  - Seeds a coherent synthetic dataset directly into a demo/test data plane:
+    12 synthetic persons (personnummer month 90+ — structurally impossible,
+    `is_synthetic = true`), 6 LSS decisions with periods (one expired), 6 LSS
+    payments (one after the decision period — triggers control rules on the next
+    payment-control run), 6 EA households/applications/decisions/payments, a demo
+    UBM request with matched subject + requested items, a demo notification. All
+    demo case numbers are prefixed `DEMO-`.
+  - Guards: HARD refusal in prod/production (before touching any database — also
+    probed by `production:safety-check`, now 14/14); stage requires
+    `--confirm-stage`; a data plane containing ANY non-synthetic person is refused;
+    `--reset` removes exactly the synthetic persons + `DEMO-*` records and was
+    verified to leave zero rows.
+  - UI already labels demo data ("Syntetisk demodata … kan aldrig visas i
+    produktionsmiljö") wherever demo dashboards render (Batch 7).
+- **Files:** `scripts/pilot-demo-seed.mjs`, `scripts/production-safety-check.mjs`,
+  `package.json`.
+- **Migrations:** none.
+- **Tests/verification:** manual runs against a fresh migrated database:
+  prod refusal, stage-without-confirm refusal, real-person refusal, successful
+  local seed (counts verified), full reset to zero. Safety check 14/14.
+- **Commands run:** seed/reset runs + full lint/format/safety-check.
+- **Remaining:** none.
+- **Env vars:** none new.
+- **Status:** production-safe.
