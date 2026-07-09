@@ -1,6 +1,6 @@
 {
   "release": "1.0.0",
-  "generatedAt": "2026-07-09T17:38:59.110Z",
+  "generatedAt": "2026-07-09T18:54:27.812Z",
   "migrations": [
     {
       "name": "202607070001_core_init.sql",

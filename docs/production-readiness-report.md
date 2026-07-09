@@ -393,6 +393,46 @@ Closes P1-15.
   NOT_IMPLEMENTED during the pilot); corrected the root README "production-grade"
   overstatement; added this per-batch evidence and the final assessment below.
 
+## Final acceptance run (2026-07-09)
+
+All commands executed on Node 22.14 / pnpm 9.12.3 / PostgreSQL 16.14 against a
+freshly created data plane (`release-runner apply` on an empty database) and a
+fresh control-plane database — the same shape as the CI database job.
+
+| Check                       | Command                                         | Result                                            |
+| --------------------------- | ----------------------------------------------- | ------------------------------------------------- |
+| Strict install              | `pnpm install --frozen-lockfile=true`           | PASS                                              |
+| Format                      | `pnpm format:check`                             | PASS                                              |
+| Typecheck (40 tasks)        | `pnpm typecheck`                                | PASS                                              |
+| Lint                        | `pnpm lint`                                     | PASS                                              |
+| Full build incl. Next.js    | `pnpm build`                                    | PASS (40 tasks)                                   |
+| Tests incl. DB + e2e suites | `pnpm test` (+ `DATA_PLANE_TEST_DATABASE_URL`)  | PASS (40 tasks; API 118 tests incl. 9-flow e2e)   |
+| Repeat-run stability        | 5 consecutive forced full runs + 1 fresh-DB run | PASS (flaky admin-flow test hardened, see note)   |
+| Secret scan                 | `pnpm security:secrets`                         | PASS (421 files)                                  |
+| Dependency audit (blocking) | `pnpm security:deps`                            | PASS (0 high/critical; 1 moderate dev-only)       |
+| Migration preflight         | `pnpm db:migrate:preflight`                     | PASS (35 migrations, checksums, signature policy) |
+| Migration dry-run           | `pnpm db:migrate:dry-run --db …`                | PASS (all 35 applied + rolled back)               |
+| Migration apply             | `release-runner apply`                          | PASS (35 applied on fresh database)               |
+| Release smoke tests         | `pnpm db:smoke-test --db …`                     | PASS (15/15)                                      |
+| RLS tests                   | `pnpm db:rls-test --db …`                       | PASS (17/17)                                      |
+| Production safety           | `pnpm production:safety-check`                  | PASS (14/14 fail-closed probes)                   |
+
+Fixes made during the acceptance run:
+
+- The release smoke test "production readiness gates are seeded" still expected
+  the original 14 gates; Batch 8 extended seeding to 31 gates, so the check
+  failed on every fresh database (including CI). The test now requires >= 31
+  gates; checksums/manifest regenerated. This was the cause of the failing CI
+  database job.
+- `turbo.json` now declares `DATA_PLANE_TEST_DATABASE_URL` /
+  `CONTROL_PLANE_TEST_DATABASE_URL` as `globalEnv`, so cached test results can
+  no longer mask the database suites when the variables change.
+- The worker onboarding-gate test seeds its own hash-valid audit/data-access
+  rows, so it passes on a freshly migrated data plane instead of depending on
+  rows left behind by other suites.
+- The admin-flow role-grant test creates its own target profile and scopes its
+  audit assertion to it, removing cross-file concurrency dependence.
+
 ---
 
 # Final assessment (2026-07-09): pilot-ready vs production-blocked

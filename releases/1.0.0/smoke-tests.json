@@ -33,8 +33,8 @@
     },
     {
       "name": "production readiness gates are seeded",
-      "sql": "select count(*)::text from production_readiness_gates",
-      "expectContains": "14"
+      "sql": "select case when count(*) >= 31 then 'gates-ok' else 'too-few-gates: ' || count(*)::text end from production_readiness_gates",
+      "expectContains": "gates-ok"
     },
     {
       "name": "rls enabled on persons",

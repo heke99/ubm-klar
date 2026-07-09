@@ -36,8 +36,9 @@ const admin = {
 describe.skipIf(!databaseUrl)('municipality admin', () => {
   let app: FastifyInstance;
   let db: DbClient;
+  let targetProfileId: string;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     db = createDbClient({ connectionString: databaseUrl!, applicationName: 'admin-test' });
     app = buildApiServer({
       directory,
@@ -46,6 +47,15 @@ describe.skipIf(!databaseUrl)('municipality admin', () => {
       dataPlane: new TenantDataPlanePool({ DATA_PLANE_DATABASE_URL: databaseUrl! }),
       demoDataEnabled: false,
     });
+    // Create our own grant target so the test does not depend on profiles that
+    // other (concurrently running) test files may or may not have created yet.
+    const profile = await db.query<{ id: string }>(
+      `insert into user_profiles (subject_id, display_name, email)
+       values ('admin-flow-target', 'Admin Flow Målperson', 'admin-flow-target@test.local')
+       on conflict (subject_id) do update set is_active = true
+       returning id`,
+    );
+    targetProfileId = profile.rows[0]!.id;
   });
 
   it('lists users with their active roles', async () => {
@@ -55,13 +65,17 @@ describe.skipIf(!databaseUrl)('municipality admin', () => {
   });
 
   it('role grants require a reason and are audited; revocation works', async () => {
-    const users = await app.inject({ method: 'GET', url: '/admin/users', headers: admin });
-    const target = users.json().users[0];
-    expect(target).toBeTruthy();
+    // Stale rows from earlier runs would collide with the (user, role, dept, unit)
+    // uniqueness on re-grant, so start from a clean slate for our own target.
+    await db.query(
+      `delete from user_roles where user_id = $1::uuid
+         and role_id = (select id from roles where role_key = 'internal_auditor')`,
+      [targetProfileId],
+    );
 
     const withoutReason = await app.inject({
       method: 'POST',
-      url: `/admin/users/${target.id}/roles`,
+      url: `/admin/users/${targetProfileId}/roles`,
       headers: admin,
       payload: { roleKey: 'internal_auditor', reason: '' },
     });
@@ -69,7 +83,7 @@ describe.skipIf(!databaseUrl)('municipality admin', () => {
 
     const granted = await app.inject({
       method: 'POST',
-      url: `/admin/users/${target.id}/roles`,
+      url: `/admin/users/${targetProfileId}/roles`,
       headers: admin,
       payload: { roleKey: 'internal_auditor', reason: 'Internrevision Q3' },
     });
@@ -77,22 +91,24 @@ describe.skipIf(!databaseUrl)('municipality admin', () => {
 
     const audit = await db.query(
       `select 1 from audit_events where event_key = 'role_mapping.changed'
-       and action = 'role_granted_internal_auditor' limit 1`,
+       and action = 'role_granted_internal_auditor'
+       and subject_id = $1::uuid limit 1`,
+      [targetProfileId],
     );
     expect(audit.rows.length).toBe(1);
 
     const afterGrant = await app.inject({ method: 'GET', url: '/admin/users', headers: admin });
-    const updated = afterGrant.json().users.find((u: { id: string }) => u.id === target.id);
+    const updated = afterGrant.json().users.find((u: { id: string }) => u.id === targetProfileId);
     expect(updated.roles).toContain('internal_auditor');
 
     const revoked = await app.inject({
       method: 'DELETE',
-      url: `/admin/users/${target.id}/roles/internal_auditor`,
+      url: `/admin/users/${targetProfileId}/roles/internal_auditor`,
       headers: admin,
     });
     expect(revoked.statusCode).toBe(200);
     const afterRevoke = await app.inject({ method: 'GET', url: '/admin/users', headers: admin });
-    const final = afterRevoke.json().users.find((u: { id: string }) => u.id === target.id);
+    const final = afterRevoke.json().users.find((u: { id: string }) => u.id === targetProfileId);
     expect(final.roles).not.toContain('internal_auditor');
   });
 

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { createDbClient } from '@ubm-klar/db';
 import { InMemoryQueue } from '@ubm-klar/queue';
@@ -114,6 +115,35 @@ describe.skipIf(!databaseUrl)('real handlers against the data plane', () => {
 
   it('onboarding job verifies audit/data-access persistence and sets gates', async () => {
     const db = createDbClient({ connectionString: databaseUrl!, applicationName: 'worker-test' });
+    // The job verifies that hash-chained audit + data access logs exist; seed one
+    // of each so the test also passes on a freshly migrated data plane. The seeded
+    // audit event carries a REAL hash (same canonical form as computeEventHash in
+    // @ubm-klar/audit) so it never trips chain verification in other suites
+    // sharing this test database.
+    const occurredAt = new Date().toISOString();
+    const eventHash = createHash('sha256')
+      .update(
+        JSON.stringify({
+          eventKey: 'worker.test_seed',
+          actorUserId: null,
+          subjectKind: null,
+          subjectId: null,
+          action: 'verify',
+          outcome: 'success',
+          occurredAt,
+          previousHash: null,
+        }),
+      )
+      .digest('hex');
+    await db.query(
+      `insert into audit_events (event_key, action, outcome, context, occurred_at, event_hash)
+       values ('worker.test_seed', 'verify', 'success', '{}'::jsonb, $1::timestamptz, $2)`,
+      [occurredAt, eventHash],
+    );
+    await db.query(
+      `insert into data_access_events (actor_user_id, access_kind, reason)
+       values (gen_random_uuid(), 'case_open', 'worker onboarding gate test seed')`,
+    );
     const registry = createDefaultRegistry({ db });
     const result = await registry.execute(makeJob('onboarding-jobs'));
     expect(result.status).toBe('succeeded');

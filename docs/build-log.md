@@ -1731,3 +1731,36 @@ error`) so pages render honest states without leaking backend details.
 - **Security notes:** documentation now matches enforced behavior; no claims of
   official authority status or production readiness beyond the gated reality.
 - **Status:** docs only.
+
+## Pilot final acceptance — full verification run
+
+- **Implemented:** ran every acceptance command against fresh data-plane and
+  control-plane databases and fixed what surfaced:
+  - Release smoke test "production readiness gates are seeded" still expected
+    14 gates; Batch 8's onboarding migration seeds 31. This failed on every
+    fresh database — including the CI database job. The check now requires
+    > = 31 gates; release checksums/manifest regenerated.
+  - `turbo.json` declares the two test database URLs as `globalEnv` so turbo
+    cache keys include them — cached runs can no longer skip the DB suites.
+  - `apps/worker/src/worker.test.ts` seeds its own hash-valid audit event and
+    data access event, so the onboarding-gate handler test passes on a freshly
+    migrated data plane (the seeded hash uses the same canonical form as
+    `computeEventHash`, keeping chain verification in other suites green).
+  - `apps/api/src/admin-flow.test.ts` creates a dedicated target profile and
+    scopes its audit assertion to it (was flaky under full-workspace
+    concurrency when it picked `users[0]` and asserted on global audit rows).
+- **Files:** `releases/1.0.0/{smoke-tests.json,checksums.txt,migration-manifest.json}`,
+  `turbo.json`, `apps/worker/src/worker.test.ts`, `apps/api/src/admin-flow.test.ts`,
+  `docs/production-readiness-report.md` (acceptance evidence table).
+- **Migrations:** none.
+- **Tests:** full workspace green 6 times in a row (5 forced runs on the
+  acceptance database + 1 first-run on a completely fresh database); smoke
+  15/15, RLS 17/17, safety check 14/14, secret scan clean, dependency audit
+  0 high/critical, preflight PASS, full build PASS.
+- **Commands run:** documented with results in
+  `docs/production-readiness-report.md` ("Final acceptance run").
+- **Remaining:** none — all 26 batches complete.
+- **Env vars:** none new.
+- **Security notes:** the smoke-test fix tightens (not loosens) the check: it
+  now fails if gates are missing rather than only when the count text changed.
+- **Status:** production-safe.
