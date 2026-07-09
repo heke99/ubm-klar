@@ -876,3 +876,46 @@ runtime behaviour.
 - **Security notes:** no secret values ever flow through the directory; the resolver
   re-scans every config with `assertNoSecretMaterial` before handing it out.
 - **Status:** production-safe.
+
+## Pilot Batch 5 — Auth, SSO, RBAC, need-to-know
+
+- **Implemented:** new `@ubm-klar/auth` package:
+  - `OidcTokenVerifier` (jose): signature via remote/local JWKS, issuer, audience,
+    expiry, clock skew; Entra ID and generic OIDC; typed failure codes.
+  - `buildSubjectFromClaims`: verified claims -> `AccessSubject` (roles direct or via
+    Entra group->role mapping, departments/units/assigned cases, session expiry) +
+    display name/email/tenant id. Unknown roles dropped, never defaulted up.
+  - Trusted-proxy header auth: HMAC-SHA256 signature over the identity headers with
+    the shared internal secret; unsigned/tampered/wrong-secret headers rejected;
+    disabled unless INTERNAL_AUTH_PROXY_TRUSTED + secret.
+  - SAML abstraction: explicitly `available: false`, verification throws
+    NOT_IMPLEMENTED (post-pilot; never silently "passes").
+  - Encrypted web sessions (A256GCM `dir` JWE): tamper-proof, role data unreadable
+    client-side; expiry enforced.
+  - API subject resolution with strict precedence (bearer -> session cookie -> signed
+    proxy headers -> plain headers only when explicitly allowed in local/demo/test);
+    a present-but-invalid credential always 401s, never falls through.
+  - Web: `/login` (SSO button + demo login only outside stage/prod), `/logout`,
+    `/auth/start` (PKCE + state), `/auth/callback` (state check, code exchange,
+    id_token verification, session cookie), `/auth/dev-login` (404 in stage/prod),
+    `/unauthorized`; `lib/session.ts` for server components.
+- **Files:** `packages/auth/*`, `apps/api/src/{server,main}.ts`,
+  `apps/api/src/auth-integration.test.ts`, `apps/web/lib/*`, `apps/web/app/{login,logout,unauthorized,auth/**}`.
+- **Migrations:** none.
+- **Tests:** 19 auth package tests (token verification incl. wrong key/issuer/audience/
+  expiry, subject building, proxy signature auth incl. spoof/tamper/wrong-secret, SAML
+  refusal, session round-trip/tamper/expiry) + 11 API integration tests on a
+  production-like server (unauthenticated 401, spoofed headers 401, valid Entra token
+  200, wrong role 403, session cookie accepted/tampered rejected, signed proxy headers
+  accepted/forged rejected). Full suite: 38 tasks green.
+- **Commands run:** package tests, `pnpm typecheck`, `pnpm test`, `pnpm lint`,
+  `pnpm production:safety-check` (13/13), `next build` + manual smoke: web refused to
+  start in prod mode without auth config (fail closed); local demo login issued an
+  encrypted session cookie.
+- **Remaining:** role-based navigation from session lands with the app shell (Batch 7).
+- **Env vars:** AUTH_ISSUER/AUTH_CLIENT_ID/AUTH_CLIENT_SECRET/AUTH_AUDIENCE/
+  AUTH_JWKS_URI, SESSION_SECRET, INTERNAL_AUTH_PROXY_TRUSTED/SECRET.
+- **Security notes:** backend authorization enforced regardless of frontend (403 with
+  audit event on deny); need-to-know rules from `@ubm-klar/access-control` unchanged
+  and exercised by the API tests; dev login structurally unreachable in stage/prod.
+- **Status:** production-safe.

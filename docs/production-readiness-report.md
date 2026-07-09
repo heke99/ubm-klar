@@ -182,3 +182,17 @@ Closes P0-4 (empty tenant directory).
   never cached; positive lookups cached once per TTL (asserted by request counting).
 - No secret material can reach the frontend: `assertNoSecretMaterial` re-checks every
   resolved config; a service-role-looking key aborts resolution.
+
+## Pilot Batch 5 — auth, SSO, RBAC (2026-07-09)
+
+Closes P0-5 (header auth) and P0-6 (no web login/session).
+
+- `@ubm-klar/auth`: verified OIDC/Entra tokens (JWKS/issuer/audience/expiry), subject
+  builder with group->role mapping, HMAC-signed trusted-proxy header auth, encrypted
+  web sessions, SAML abstraction that refuses (post-pilot).
+- Evidence: 19 auth tests + 11 API integration tests PASS on a production-like server:
+  spoofed `x-user-id`/`x-roles` headers -> 401; unauthenticated -> 401; valid Entra
+  token with right role -> 200; wrong role -> 403 (+ audit event); expired/wrong-key/
+  wrong-issuer tokens -> 401; tampered session cookie -> 401; forged proxy signature
+  -> 401. Web refused to start in prod without auth config; demo login only exists
+  outside stage/prod (404 otherwise).
