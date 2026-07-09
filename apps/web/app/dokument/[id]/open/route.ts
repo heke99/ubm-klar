@@ -6,6 +6,12 @@ export const dynamic = 'force-dynamic';
 
 /** Opens/downloads a document via the API (reason forwarded; access logged server-side). */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  // CSRF: form posts must come from our own origin.
+  const origin = request.headers.get('origin');
+  const host = request.headers.get('host');
+  if (origin && host && new URL(origin).host !== host) {
+    return NextResponse.json({ error: 'csrf_origin_mismatch' }, { status: 403 });
+  }
   const { id } = await params;
   const form = await request.formData();
   const reason = String(form.get('reason') ?? '');

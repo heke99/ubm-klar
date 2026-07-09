@@ -135,6 +135,7 @@ const app = buildApiServer({
   // stage/prod: in-memory audit/data-access sinks are unreachable — requests
   // without a persistent tenant data plane are refused.
   requirePersistentAudit: config.isProductionLike || config.audit.sink === 'postgres',
+  isProductionLike: config.isProductionLike,
 });
 
 app.listen({ port, host: '0.0.0.0' }).then(() => {

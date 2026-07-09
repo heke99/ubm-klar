@@ -58,6 +58,8 @@ import { registerControlCaseRoutes } from './control-case-routes';
 import { registerNotificationRoutes } from './notification-routes';
 import { registerReportRoutes } from './report-routes';
 import { registerAdminRoutes } from './admin-routes';
+import { registerRateLimiter, registerSafeErrorHandler, registerSecurityHeaders } from './security';
+import { registerRetentionRoutes } from './retention-routes';
 import {
   createTenantLoggers,
   type AccessRecorder,
@@ -119,6 +121,10 @@ export interface ApiServerOptions {
    * In-memory sinks are then unreachable.
    */
   requirePersistentAudit?: boolean;
+  /** true in stage/prod: enables HSTS. */
+  isProductionLike?: boolean;
+  /** Rate limiting on by default; only tests may disable it. */
+  disableRateLimiting?: boolean;
   /**
    * Whether synthetic demo data may be served at all (environment-level gate;
    * loadAppConfig forbids this in stage/prod). The tenant must ALSO opt in via
@@ -282,7 +288,11 @@ async function resolveSubject(
 }
 
 export function buildApiServer(options: ApiServerOptions): FastifyInstance {
-  const app = Fastify({ logger: false, disableRequestLogging: true });
+  // Body limit: uploads are base64 (25 MB raw ≈ 34 MB encoded) + JSON envelope.
+  const app = Fastify({ logger: false, disableRequestLogging: true, bodyLimit: 40 * 1024 * 1024 });
+  registerSecurityHeaders(app, options.isProductionLike ?? false);
+  if (!options.disableRateLimiting) registerRateLimiter(app);
+  registerSafeErrorHandler(app);
   const resolver = new TenantResolver({
     directory: options.directory,
     ...(options.cacheTtlMs !== undefined ? { cacheTtlMs: options.cacheTtlMs } : {}),
@@ -785,6 +795,11 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
   registerAdminRoutes(app, {
     requirePermission: (request, reply, permission) =>
       requirePermission(request, reply, permission, { kind: 'admin' }),
+  });
+
+  registerRetentionRoutes(app, {
+    requirePermission: (request, reply, permission) =>
+      requirePermission(request, reply, permission, { kind: 'archive' }),
   });
 
   registerDocumentRoutes(app, {

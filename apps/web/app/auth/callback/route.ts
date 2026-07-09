@@ -11,6 +11,10 @@ export const dynamic = 'force-dynamic';
  * session cookie. Any mismatch aborts to /login with a generic error.
  */
 export async function GET(request: NextRequest) {
+  const { rateLimit, clientKey } = await import('../../../lib/rate-limit');
+  if (!rateLimit(clientKey(request.headers, 'callback'), 30)) {
+    return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
+  }
   const config = getWebAuthConfig();
   const url = new URL(request.url);
   const code = url.searchParams.get('code');

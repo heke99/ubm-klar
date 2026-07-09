@@ -1513,3 +1513,46 @@ error`) so pages render honest states without leaking backend details.
   vendor support can never reach citizen data (no-PII roles + RLS restrictive
   policies + no-PII session flag).
 - **Status:** production-safe.
+
+## Pilot Batch 20 — Security, privacy, legal, compliance hardening
+
+- **Implemented:**
+  - Security headers: web (next.config headers — CSP with self-only scripts,
+    frame-ancestors none, form-action self, Referrer-Policy, X-Content-Type-Options,
+    Permissions-Policy, HSTS in stage/prod) and API (Fastify onSend — nosniff,
+    no-referrer, DENY framing, restrictive CSP, CORP, HSTS in prod).
+  - Rate limiting: API sliding-window limiter per IP with route classes (auth 20/min,
+    upload 30/min, download/open/reports 60/min, reveal-field 30/min, general
+    600/min; 429 + Retry-After). Web auth routes (callback, dev-login) rate-limited.
+  - CSRF: web mutations run through Next Server Actions (built-in origin
+    enforcement); the custom POST route handler (document open) verifies
+    Origin==Host explicitly.
+  - Size limits: API bodyLimit 40 MB (base64 envelope for the 25 MB upload cap);
+    web server-actions bodySizeLimit 30 MB; import caps (25 MB / 50k rows) from
+    Batch 9.
+  - Safe errors: API-wide error handler — 5xx responses carry only a generic
+    Swedish message + correlation id (no stack traces, no internals); technical
+    detail logged server-side through the no-PII sanitizer.
+  - Privacy/legal UI: `/juridik` now shows tenant-specific dataskyddsstatus from the
+    REAL readiness gates (PUB/DPA, DPIA, rättslig grund, gallring) plus DSR
+    procedure, subprocessors pointer and incident contact.
+  - Retention: `GET /retention/policies` (rules per informationsklass),
+    `GET/POST /retention/legal-holds` + release (audited; holds block disposal),
+    `GET /retention/disposal-queue` (gallringskö + active hold count; disposal
+    requires maker-checker per the DB schema). `/arkiv` shows real rules, holds
+    (creatable) and the disposal queue.
+  - AI guardrails: unchanged from release 1.0.0 (suggestion-only enforced by DB
+    CHECK; PII-in-prompt gated) — no AI features are enabled in the pilot.
+- **Files:** `apps/api/src/{security,retention-routes,server,main}.ts`,
+  `apps/web/{next.config.mjs,lib/rate-limit.ts}`,
+  `apps/web/app/{juridik,arkiv}/page.tsx`, auth route handlers.
+- **Migrations:** none new.
+- **Tests:** 5 security tests: headers on every response, HSTS only on
+  production-like servers, reveal-field rate limited with Retry-After, internal
+  errors hidden behind correlation ids (no stack traces/details), body size limit
+  enforced. 106 API tests green.
+- **Commands run:** full typecheck/test/lint/build/safety-check/format.
+- **Remaining:** per-tenant CSP nonce hardening post-pilot (Next inline-style
+  allowance documented).
+- **Env vars:** none new.
+- **Status:** production-safe.

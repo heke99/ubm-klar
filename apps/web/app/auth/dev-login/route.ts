@@ -15,6 +15,10 @@ export async function POST(request: NextRequest) {
   if (!config.devLoginEnabled) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
+  const { rateLimit, clientKey } = await import('../../../lib/rate-limit');
+  if (!rateLimit(clientKey(request.headers, 'dev-login'), 20)) {
+    return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
+  }
 
   const form = await request.formData();
   const role = String(form.get('role') ?? '');
