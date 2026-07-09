@@ -802,3 +802,41 @@ runtime behaviour.
 - **Security notes:** apps refuse unsafe production startup before binding a port;
   local development needs no env vars at all.
 - **Status:** production-safe (fail-closed validation active in all apps).
+
+## Pilot Batch 3 — Control plane persistence
+
+- **Implemented:** new `@ubm-klar/db` package (pg pool client, transactions, idempotent
+  migration applier with per-schema ledger). `PostgresControlPlaneStore`
+  (apps/control-plane/src/postgres-store.ts) implementing the full `ControlPlaneStore`
+  interface against `apps/control-plane/migrations` (tenants, domains, environments,
+  modules, auth providers, feature flags, support cases, readiness gates, health
+  checks, release status, provisioning runs + steps). Store interface converted to
+  async; provisioning runs now persist via the store instead of a service-local Map.
+  `main.ts` selects Postgres when `CONTROL_PLANE_DATABASE_URL` is set (auto-applies
+  control-plane migrations at boot) and refuses in-memory in stage/prod. Bearer-token
+  admin auth on all routes except /health (timing-safe compare;
+  `CONTROL_PLANE_ADMIN_TOKEN`, mandatory in stage/prod via config). New endpoints:
+  `POST /tenants/:id/domains/:domainId/verify`, `GET /tenants/:id/environments`,
+  `GET /tenants/:id/modules`, `PUT/GET /tenants/:id/auth-providers` (rejects secret
+  references), `PUT/GET /tenants/:id/approvals` (pilot/production approval flags stored
+  as readiness gates, approver+reason required, production allowed only when all
+  required gates pass or are waived), `GET /directory/domains/:domain` (verified-only
+  tenant directory lookup for the API resolver; unverified/unknown -> 404).
+- **Files:** `packages/db/*`, `apps/control-plane/src/{store,postgres-store,server,provisioning,main,index}.ts`.
+- **Migrations:** none new (uses existing 0001/0002 control-plane migrations, now
+  actually applied and queried at runtime).
+- **Tests:** 29 control-plane tests: 15 API, 7 admin-auth/approvals/domain-verify, 7
+  Postgres repository tests against real Postgres 16 (tenant round-trip across store
+  instances, domain verify, module idempotency, gate upsert, PII rejection at store
+  level, environment key references, provisioning persistence). Runtime verification:
+  tenant created via HTTP survived process restart; unauthenticated request got 401.
+- **Commands run:** `pnpm --filter @ubm-klar/control-plane test` (with
+  `CONTROL_PLANE_TEST_DATABASE_URL`), `pnpm typecheck`, `pnpm test` (37 tasks),
+  `pnpm lint`, `pnpm production:safety-check` (13/13).
+- **Remaining:** wire API tenant resolver to `/directory/domains/:domain` (Batch 4).
+- **Env vars:** `CONTROL_PLANE_DATABASE_URL`, `CONTROL_PLANE_ADMIN_TOKEN`,
+  `CONTROL_PLANE_TEST_DATABASE_URL` (tests only).
+- **Security notes:** no-PII guard now enforced at three layers (API scan, store scan,
+  schema); secret references rejected on environments and auth providers; directory
+  endpoint never returns key values, only references.
+- **Status:** production-safe.

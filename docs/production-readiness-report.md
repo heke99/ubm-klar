@@ -156,3 +156,16 @@ providers unreachable in stage/prod at startup.
   including: prod refuses demo data, demo tenant, disabled-local scanner, header auth
   without trusted proxy, no-op worker, missing queue, official UBM transport flag.
 - Local development remains zero-config (verified by `loadAppConfig('api', {})`).
+
+## Pilot Batch 3 — control plane persistence (2026-07-09)
+
+Closes P0-3 (in-memory control plane, no auth on control-plane routes).
+
+- `PostgresControlPlaneStore` + `@ubm-klar/db`; migrations 0001/0002 applied and
+  queried at runtime; provisioning runs persisted.
+- Evidence: 29 control-plane tests PASS (7 against live Postgres 16); manual runtime
+  check — tenant created over HTTP survived a process restart; requests without the
+  admin bearer token get 401; PII payloads still rejected 422 at the API boundary and
+  with `PiiLeakError` at the store layer; secret-looking key references rejected 400.
+- Production cannot use `InMemoryControlPlaneStore` (config validation + defense in
+  depth in `main.ts`, probed by `production:safety-check`).
