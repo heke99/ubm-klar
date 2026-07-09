@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ubm-klar/access-control": "workspace:*",
+    "@ubm-klar/auth": "workspace:*",
     "@ubm-klar/config": "workspace:*",
     "@ubm-klar/economic-assistance-domain": "workspace:*",
     "@ubm-klar/lss-domain": "workspace:*",
@@ -22,7 +23,8 @@
     "@ubm-klar/ubm-eligibility-engine": "workspace:*",
     "next": "^15.1.3",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@types/react": "^19.0.2",

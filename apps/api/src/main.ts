@@ -1,5 +1,6 @@
 import { loadAppConfig, UnsafeProductionConfigError } from '@ubm-klar/config';
-import { buildApiServer } from './server';
+import { OidcTokenVerifier } from '@ubm-klar/auth';
+import { buildApiServer, type ApiAuthOptions } from './server';
 import { ControlPlaneTenantDirectory, type TenantDirectory } from '@ubm-klar/tenant-resolver';
 
 const config = (() => {
@@ -39,11 +40,40 @@ function selectDirectory(): TenantDirectory {
   return { lookupByDomain: async () => undefined };
 }
 
+function buildAuthOptions(): ApiAuthOptions {
+  const auth: ApiAuthOptions = {
+    allowInsecureHeaderAuth: !config.isProductionLike,
+  };
+  if (
+    (config.auth.provider === 'entra_id' || config.auth.provider === 'oidc') &&
+    config.auth.issuer &&
+    (config.auth.audience || config.auth.clientId)
+  ) {
+    auth.verifier = new OidcTokenVerifier({
+      provider: config.auth.provider,
+      issuer: config.auth.issuer,
+      audience: config.auth.audience ?? config.auth.clientId!,
+      ...(config.auth.jwksUri ? { jwksUri: config.auth.jwksUri } : {}),
+    });
+  }
+  if (process.env.SESSION_SECRET) {
+    auth.sessionSecret = process.env.SESSION_SECRET;
+  }
+  if (config.auth.headerProxy.trusted && process.env.INTERNAL_AUTH_PROXY_SECRET) {
+    auth.headerProxy = {
+      trusted: true,
+      secret: process.env.INTERNAL_AUTH_PROXY_SECRET,
+    };
+  }
+  return auth;
+}
+
 const port = Number(process.env.API_PORT ?? 3001);
 const app = buildApiServer({
   directory: selectDirectory(),
   allowDemoTenant: config.tenantResolver.allowDemoTenant,
   cacheTtlMs: config.tenantResolver.cacheTtlSeconds * 1000,
+  auth: buildAuthOptions(),
 });
 
 app.listen({ port, host: '0.0.0.0' }).then(() => {

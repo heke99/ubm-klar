@@ -7,6 +7,17 @@ import {
   type AccessSubject,
   type PermissionKey,
 } from '@ubm-klar/access-control';
+import {
+  buildSubjectFromClaims,
+  ProxyAuthError,
+  readSessionToken,
+  SESSION_COOKIE_NAME,
+  SessionError,
+  subjectFromTrustedProxyHeaders,
+  TokenVerificationError,
+  type OidcTokenVerifier,
+} from '@ubm-klar/auth';
+import type { RoleId } from '@ubm-klar/shared-types';
 import { AuditLogger, InMemoryAuditSink } from '@ubm-klar/audit';
 import {
   DataAccessLogger,
@@ -44,12 +55,30 @@ import type { DataClass, SafeTenantConfig } from '@ubm-klar/shared-types';
  * - all data access is logged; sensitive reveals require a recorded reason
  * - service-role credentials never leave this process
  */
+export interface ApiAuthOptions {
+  /** Verified OIDC/Entra bearer tokens (primary auth in stage/prod). */
+  verifier?: OidcTokenVerifier;
+  /** IdP group id -> UBM Klar role mapping. */
+  groupRoleMapping?: Record<string, RoleId>;
+  /** Encrypted web session cookies (set by the web app after login). */
+  sessionSecret?: string;
+  /** Header auth behind a verified internal proxy (HMAC-signed headers). */
+  headerProxy?: { trusted: boolean; secret?: string };
+  /**
+   * Plain unsigned identity headers. local/demo/test ONLY — loadAppConfig
+   * forbids this outside a trusted proxy in stage/prod, and buildApiServer
+   * defaults it off unless the demo tenant is enabled.
+   */
+  allowInsecureHeaderAuth?: boolean;
+}
+
 export interface ApiServerOptions {
   directory: TenantDirectory;
   /** Demo mode allows localhost with a synthetic demo tenant (never in prod). */
   allowDemoTenant?: boolean;
   /** TTL for positive tenant lookups (failures are never cached). */
   cacheTtlMs?: number;
+  auth?: ApiAuthOptions;
 }
 
 export interface AuthenticatedContext {
@@ -92,9 +121,8 @@ const DEMO_TENANT: SafeTenantConfig = Object.freeze({
   featureFlags: {},
 } satisfies SafeTenantConfig);
 
-function parseSubject(request: FastifyRequest): AccessSubject | undefined {
-  // In production the subject is built from the verified SSO token (Entra/SAML/OIDC).
-  // For tests/demo the claims arrive via signed headers from the auth proxy.
+/** Plain unsigned header parsing — local/demo/test only (see ApiAuthOptions). */
+function parseInsecureHeaderSubject(request: FastifyRequest): AccessSubject | undefined {
   const userId = request.headers['x-user-id'];
   if (typeof userId !== 'string' || userId.length === 0) return undefined;
   const roles = String(request.headers['x-roles'] ?? '')
@@ -124,12 +152,96 @@ function parseSubject(request: FastifyRequest): AccessSubject | undefined {
   };
 }
 
+function parseCookie(header: string | undefined, name: string): string | undefined {
+  if (!header) return undefined;
+  for (const part of header.split(';')) {
+    const [key, ...rest] = part.trim().split('=');
+    if (key === name) return rest.join('=');
+  }
+  return undefined;
+}
+
+class AuthenticationFailedError extends Error {
+  constructor(public readonly code: string) {
+    super(`Authentication failed: ${code}`);
+    this.name = 'AuthenticationFailedError';
+  }
+}
+
+/**
+ * Resolves the request subject with strict precedence:
+ * 1. OIDC/Entra bearer token (verified: signature, issuer, audience, expiry)
+ * 2. Encrypted web session cookie
+ * 3. HMAC-signed headers from a trusted internal auth proxy
+ * 4. Plain headers — only when explicitly allowed (local/demo/test)
+ *
+ * A *present but invalid* credential always fails the request (401); it never
+ * falls through to a weaker mechanism.
+ */
+async function resolveSubject(
+  request: FastifyRequest,
+  auth: ApiAuthOptions,
+): Promise<AccessSubject | undefined> {
+  const authorization = request.headers.authorization;
+  if (typeof authorization === 'string' && authorization.startsWith('Bearer ')) {
+    if (!auth.verifier) throw new AuthenticationFailedError('bearer_not_supported');
+    try {
+      const { payload } = await auth.verifier.verify(authorization.slice('Bearer '.length));
+      const built = buildSubjectFromClaims(payload, {
+        ...(auth.groupRoleMapping ? { groupRoleMapping: auth.groupRoleMapping } : {}),
+      });
+      return built.subject;
+    } catch (error) {
+      if (error instanceof TokenVerificationError) {
+        throw new AuthenticationFailedError(error.code);
+      }
+      throw error;
+    }
+  }
+
+  const sessionCookie = parseCookie(request.headers.cookie, SESSION_COOKIE_NAME);
+  if (sessionCookie && auth.sessionSecret) {
+    try {
+      const session = await readSessionToken(sessionCookie, auth.sessionSecret);
+      return session.subject;
+    } catch (error) {
+      if (error instanceof SessionError) throw new AuthenticationFailedError(error.code);
+      throw error;
+    }
+  }
+
+  const hasIdentityHeaders = typeof request.headers['x-user-id'] === 'string';
+  if (hasIdentityHeaders && auth.headerProxy?.trusted && auth.headerProxy.secret) {
+    try {
+      return subjectFromTrustedProxyHeaders(request.headers, {
+        trusted: auth.headerProxy.trusted,
+        secret: auth.headerProxy.secret,
+      });
+    } catch (error) {
+      if (error instanceof ProxyAuthError) throw new AuthenticationFailedError(error.code);
+      throw error;
+    }
+  }
+
+  if (hasIdentityHeaders && auth.allowInsecureHeaderAuth) {
+    return parseInsecureHeaderSubject(request);
+  }
+
+  return undefined;
+}
+
 export function buildApiServer(options: ApiServerOptions): FastifyInstance {
   const app = Fastify({ logger: false, disableRequestLogging: true });
   const resolver = new TenantResolver({
     directory: options.directory,
     ...(options.cacheTtlMs !== undefined ? { cacheTtlMs: options.cacheTtlMs } : {}),
   });
+  const authOptions: ApiAuthOptions = {
+    // Plain header auth defaults to the demo-tenant setting: on for local/demo/
+    // test servers, off the moment the server is built for real tenants.
+    allowInsecureHeaderAuth: options.allowDemoTenant ?? false,
+    ...options.auth,
+  };
   const auditLogger = new AuditLogger(new InMemoryAuditSink());
   const accessLogger = new DataAccessLogger(new InMemoryDataAccessSink());
 
@@ -153,7 +265,18 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
         throw error;
       }
     }
-    request.subject = parseSubject(request);
+    try {
+      request.subject = await resolveSubject(request, authOptions);
+    } catch (error) {
+      if (error instanceof AuthenticationFailedError) {
+        return reply.status(401).send({
+          error: 'authentication_failed',
+          message: 'Inloggningen kunde inte verifieras.',
+          code: error.code,
+        });
+      }
+      throw error;
+    }
   });
 
   function requirePermission(

@@ -3,6 +3,7 @@ const nextConfig = {
   transpilePackages: [
     '@ubm-klar/shared-types',
     '@ubm-klar/access-control',
+    '@ubm-klar/auth',
     '@ubm-klar/tenant-resolver',
     '@ubm-klar/rule-engine',
     '@ubm-klar/lss-domain',

@@ -14,6 +14,7 @@
     "@ubm-klar/approval-workflows": "workspace:*",
     "@ubm-klar/archive-engine": "workspace:*",
     "@ubm-klar/audit": "workspace:*",
+    "@ubm-klar/auth": "workspace:*",
     "@ubm-klar/config": "workspace:*",
     "@ubm-klar/data-access-log": "workspace:*",
     "@ubm-klar/data-lineage": "workspace:*",
@@ -36,6 +37,7 @@
     "fastify": "^5.2.0"
   },
   "devDependencies": {
+    "jose": "^5.9.6",
     "vitest": "^3.2.6"
   }
 }
