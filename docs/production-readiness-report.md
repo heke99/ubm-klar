@@ -211,6 +211,19 @@ Closes P0-8 (demo data served as business data) and P0-9 (no database repositori
   generators are not even constructed on stage/prod servers.
 - CI database job now also runs the repository test suites against Postgres 16.
 
+## Pilot Batches 8–9 — onboarding gates and import MVP (2026-07-09)
+
+Closes P1-5 (onboarding/go-live gates) and P1-1 (import flow), incl. the XLSX adapter
+gap from the 1.0.0 hardening notes.
+
+- 26-step onboarding checklist with pilot/production scopes and a formal waiver model
+  (reason, approver, expiry, risk level — expired waivers fail closed). Approval
+  status endpoint separates pilot from production readiness.
+- Import MVP verified end-to-end against live Postgres: upload -> mapping -> preview
+  -> validate -> commit with row-level lineage; idempotent by file hash; rollback
+  before commit; synthetic personnummer blocked outside demo; XLSX parsed natively;
+  named source-system adapters explicitly marked unavailable until implemented.
+
 ## Pilot Batch 7 — real web UI (2026-07-09)
 
 Closes the web half of P0-8 (force-static demo pages) and P0-6 remainder (role-based

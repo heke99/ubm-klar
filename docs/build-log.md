@@ -1040,3 +1040,58 @@ error`) so pages render honest states without leaking backend details.
 - **Security notes:** required gates cannot be bypassed except by documented waiver;
   every gate change and waiver writes an audit event with correlation id.
 - **Status:** production-safe.
+
+## Pilot Batch 9 — Import MVP for LSS and economic assistance
+
+- **Implemented:**
+  - `@ubm-klar/import-engine` extended: real XLSX reader/writer (`xlsx.ts` — zip
+    container + sharedStrings/inline strings via node:zlib, no new dependencies;
+    `createNodeExcelAdapter()` fulfils the previously-empty `ExcelAdapter`
+    abstraction; `buildXlsx` for tests/report export). Source-system adapter registry
+    (`source-systems.ts`): generic CSV/XLSX/internal-JSON available;
+    Procapita/Lifecare, Treserva, Combine, Pulsen, CGI, TietoEVRY declared but
+    `available: false` with explicit reasons — never claimed as complete. Import type
+    catalog (`import-types.ts`): all 15 pilot kinds (LSS persons/decisions/time
+    reports/invoices/payments/providers; EA households/applications/decisions/income/
+    housing/payments; payment files; recipient register; recovery claims) with typed
+    target fields. Row validation (`row-validation.ts`): personnummer format (Luhn),
+    synthetic personnummer (month 90+) blocked outside demo, required fields, date
+    ranges, negative/unusually high amounts, enum values, period sanity, in-file
+    duplicate detection (error for payments).
+  - Migration `202607070033_import_staging.sql`: staging rows (raw+mapped+errors+
+    committed entity lineage) and per-batch mapping storage, RLS enabled.
+  - API (`import-routes.ts`): `GET /imports/source-systems`, `GET /imports/types`,
+    `POST /imports` (base64 upload, size limit, format detection, JSON restricted to
+    the internal test source, idempotency by file hash -> 409, staging + audit),
+    `POST /imports/:id/mapping` (target-field validation), `GET /imports/:id/preview`
+    (data access logged), `POST /imports/:id/validate` (issues persisted as
+    import_errors), `POST /imports/:id/commit` (one transaction, per-kind committers
+    for all 15 types with personnummer/decision/household/application matching and
+    understandable Swedish errors like PERSON_NOT_FOUND/HOUSEHOLD_NOT_FOUND; staging
+    rows updated with committed entity ids = lineage), `POST /imports/:id/rollback`
+    (before commit only). Audit events for upload/validate/commit/rollback.
+  - Web: `/importer/new` (upload + type + source system with unavailable adapters
+    disabled) and `/importer/[batchId]` (mapping form, preview with per-row errors,
+    validate/commit/rollback actions) via server actions.
+- **Files:** `packages/import-engine/src/{xlsx,source-systems,import-types,row-validation,index}.ts`,
+  `supabase/migrations/202607070033_import_staging.sql`, `releases/1.0.0/*`,
+  `apps/api/src/{import-routes,import-commit,server}.ts`,
+  `apps/web/app/importer/{new,[batchId]}/page.tsx`, `packages/audit/src/audit-log.ts`
+  (new event keys incl. `import.batch`, `authorization.denied`,
+  `readiness.gate_changed`).
+- **Migrations:** 1 new (33 total), applied locally via the release runner.
+- **Tests:** 8 import pipeline tests against live Postgres: full CSV flow
+  (upload->map->preview->validate->commit with lineage verified in the database),
+  idempotency (same file -> 409), rollback before commit (and refusal after),
+  synthetic personnummer blocked for prod tenants, XLSX payments flow with
+  partial commit (negative amount skipped), unavailable adapters refused,
+  unauthorized roles refused. 61 API tests green.
+- **Commands run:** release runner checksums/preflight/apply; full
+  typecheck/test/lint/build/safety-check/format.
+- **Remaining:** BGMAX/ISO20022 native parsing stays an abstraction (CSV-converted
+  payment files import today); data-quality/rule runs on committed batches trigger in
+  Batch 16.
+- **Env vars:** none new.
+- **Security notes:** demo/test personnummer cannot pollute production tenants;
+  import previews log data access; upload capped at 25 MB / 50k rows.
+- **Status:** production-safe.
