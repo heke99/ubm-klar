@@ -1477,3 +1477,39 @@ error`) so pages render honest states without leaking backend details.
 - **Security notes:** reports never bypass the role model — rows are aggregates and
   references; report generation itself is audit-logged.
 - **Status:** production-safe.
+
+## Pilot Batch 19 — Admin, support, superadmin without PII
+
+- **Implemented:**
+  - Municipality admin API (`apps/api/src/admin-routes.ts`): `GET /admin/users`
+    (staff profiles with active roles), `GET /admin/roles` (catalogue incl. no-PII
+    markers), `POST /admin/users/:id/roles` (grant — REQUIRES a reason, audited as
+    `role_mapping.changed`), `DELETE .../roles/:roleKey` (time-bound revocation via
+    valid_to, audited), `GET /admin/departments`,
+    `GET /admin/support-access` (municipality review of every vendor JIT support and
+    break-glass session from the persistent audit log).
+  - Web `/installningar/anvandare`: user/role management with reasons + revocation,
+    and the support/break-glass review list.
+  - Vendor superadmin remains the CONTROL PLANE API (Batch 3): tenants, domains,
+    environments, modules, readiness, support cases — protected by the admin token,
+    PII structurally rejected at the API boundary AND the store layer (verified by
+    existing control-plane tests); support-case listing is no-PII by schema. Vendor
+    superadmin has NO route into municipal data planes.
+  - Support sessions: JIT (municipality-approved, scope-limited, max 8h) and
+    break-glass (incident reference, max 4h, post-review) endpoints existed; now
+    surfaced for municipal review in the UI.
+- **Files:** `apps/api/src/admin-routes.ts`, `apps/api/src/server.ts`,
+  `apps/web/app/installningar/anvandare/page.tsx`,
+  `apps/web/app/installningar/page.tsx`.
+- **Migrations:** none new (uses roles/user_roles from release 1.0.0).
+- **Tests:** 4 admin tests on live Postgres: users listed with roles; grant refused
+  without reason, audited when granted, revocation effective; support access review
+  lists sessions and contains no personnummer-like content; non-admin roles 403.
+  101 API tests green.
+- **Commands run:** full typecheck/test/lint/build/safety-check/format.
+- **Remaining:** none for pilot.
+- **Env vars:** none new.
+- **Security notes:** every role change carries a reason and lands in the audit log;
+  vendor support can never reach citizen data (no-PII roles + RLS restrictive
+  policies + no-PII session flag).
+- **Status:** production-safe.

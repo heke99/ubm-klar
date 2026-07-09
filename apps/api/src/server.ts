@@ -57,6 +57,7 @@ import { registerDocumentRoutes } from './document-routes';
 import { registerControlCaseRoutes } from './control-case-routes';
 import { registerNotificationRoutes } from './notification-routes';
 import { registerReportRoutes } from './report-routes';
+import { registerAdminRoutes } from './admin-routes';
 import {
   createTenantLoggers,
   type AccessRecorder,
@@ -779,6 +780,11 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
   registerReportRoutes(app, {
     requirePermission: (request, reply, permission) =>
       requirePermission(request, reply, permission, { kind: 'report' }),
+  });
+
+  registerAdminRoutes(app, {
+    requirePermission: (request, reply, permission) =>
+      requirePermission(request, reply, permission, { kind: 'admin' }),
   });
 
   registerDocumentRoutes(app, {

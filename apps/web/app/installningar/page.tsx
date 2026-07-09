@@ -29,7 +29,10 @@ export default async function InstallningarPage() {
           <li>
             <a href="/onboarding">Onboarding och beredskapsgrindar</a>
           </li>
-          <li>Användare och roller (mappning från Entra ID/OIDC-grupper)</li>
+          <li>
+            <a href="/installningar/anvandare">Användare och roller</a> (mappning från Entra
+            ID/OIDC-grupper)
+          </li>
           <li>
             <a href="/importer">Integrationer och importmappningar</a>
           </li>
