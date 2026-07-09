@@ -1,8 +1,15 @@
 # UBM Klar
 
-UBM Klar is a production-grade Swedish municipal readiness, payment-control, evidence, and export-preparation platform for municipalities preparing for UBM-related processes.
+UBM Klar is a Swedish municipal readiness, payment-control, evidence, and export-preparation platform for municipalities preparing for UBM-related processes.
 
-This repository is intentionally initialized with a real architecture foundation so Cursor can build against a structured project instead of an empty repository.
+**Current status: ready for CONTROLLED CUSTOMER PILOTS.** The platform has real
+authentication (Entra ID/OIDC), persistent multi-service runtime (control plane,
+API, worker, web) against isolated per-municipality Postgres data planes,
+hash-chained audit logging, maker-checker export controls and fail-closed
+production configuration. Production go-live per municipality is additionally
+gated by the production readiness gates (see `/onboarding` and
+[docs/production-readiness-report.md](docs/production-readiness-report.md) for
+an honest breakdown of what is pilot-ready versus production-blocked).
 
 ## Product scope
 

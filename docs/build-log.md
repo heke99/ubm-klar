@@ -1690,3 +1690,44 @@ error`) so pages render honest states without leaking backend details.
 - **Remaining:** none.
 - **Env vars:** none new.
 - **Status:** production-safe.
+
+## Pilot Batch 25 — Documentation and handover
+
+- **Implemented:** the customer-facing and operational handover documentation set,
+  matched against the shipped code (no overstated claims):
+  - `docs/deployment/customer-pilot.md` — zero-to-pilot deployment guide:
+    service architecture, minimum stage/prod env matrix, release/migration
+    commands, tenant setup on the control plane, mandatory pilot gates, explicit
+    "what the pilot does NOT include" list, demo seed and support model.
+  - `docs/runbooks/incident-and-rollback-runbook.md` — operational quick
+    diagnosis (correlation ids, ready/health endpoints), containment levers
+    (suspend/unverify -> 421, feature flags, worker stop, secret rotation),
+    two-step release rollback (expand-only code rollback, PITR only for data
+    corruption) and post-incident restart checklist.
+  - `docs/user-manuals/README.md` — rewritten from a 3-line stub into a
+    role-based Swedish user guide for every pilot flow (import, UBM requests,
+    payment control, notifications, documents, reports, audit, admin).
+  - `docs/deployment/README.md` and `docs/exit-plan/README.md` — expanded from
+    stubs; the exit plan honestly states the automated exit-export worker job is
+    NOT_IMPLEMENTED during the pilot and how exit capability is met meanwhile.
+  - `README.md` — removed the "production-grade" overstatement; status is now
+    "ready for CONTROLLED CUSTOMER PILOTS" with a pointer to the honest
+    breakdown.
+  - `docs/production-readiness-report.md` — per-batch acceptance evidence
+    completed through Batch 25 plus a final assessment separating pilot-ready,
+    enforced pilot exclusions, and production-blocked gates.
+  - Existing docs verified current: backup-restore + go-live runbooks,
+    monitoring, incident process, support model, onboarding, architecture,
+    security, GDPR/DPIA/procurement/accessibility/e-archive sets.
+- **Files:** `README.md`, `docs/deployment/{customer-pilot.md,README.md}`,
+  `docs/runbooks/incident-and-rollback-runbook.md`, `docs/user-manuals/README.md`,
+  `docs/exit-plan/README.md`, `docs/production-readiness-report.md`,
+  `docs/build-log.md`.
+- **Migrations:** none.
+- **Tests:** none (docs only); format check run.
+- **Commands run:** `pnpm format:check`.
+- **Remaining:** final acceptance run (all commands + evidence) in the last batch.
+- **Env vars:** none new.
+- **Security notes:** documentation now matches enforced behavior; no claims of
+  official authority status or production readiness beyond the gated reality.
+- **Status:** docs only.

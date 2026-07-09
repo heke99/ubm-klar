@@ -237,3 +237,207 @@ navigation).
   "inga uppgifter" (no fake stats); unauthorized role gets "Behörighet saknas" from a
   backend 403; anonymous users are redirected to /login; `next build` and full test
   suite green.
+
+## Pilot Batches 10–11 — UBM requests, export proposals, packaging (2026-07-09)
+
+Closes P1-2 (UBM request workflow) and P1-3 (export proposals/packaging).
+
+- Full manual UBM request lifecycle on the persistent data plane with the 16-state
+  machine; person matching always writes `person_search` data access events; the
+  27-question eligibility engine runs on real data; disabled intake channels are
+  refused with explicit messages.
+- Export proposals: maker-checker persisted in `approval_workflows` and enforced in
+  code AND by DB trigger (self-approval 422 verified); deterministic zip packaging
+  (manifest.json, data.json, export-summary.md, checksums.txt) with
+  `notOfficialUbmFormat: true`; download is hash-verified, audited and
+  access-logged; manual sending + receipt close the request.
+- Evidence: 10 workflow tests on live Postgres (71 API tests green at the time);
+  blocked proposals can neither be submitted nor packaged.
+
+## Pilot Batch 12 — document vault (2026-07-09)
+
+Closes P1-4 (document persistence, classification, reveal-with-reason, redaction).
+
+- Storage adapters: local FS (forbidden in stage/prod), Supabase Storage, S3
+  SigV4 with SSE; ClamAV + external-API scanners; infected uploads refused and
+  never stored; prod refuses uploads when scanning is unavailable.
+- Sensitive classes require a reason to open; every open writes data access +
+  document event + audit rows. Redaction verifies no sensitive patterns survive
+  before storing the redacted copy separately; non-text redaction honestly
+  returns NOT_IMPLEMENTED.
+- Evidence: 6 document tests on live Postgres + local storage (77 API tests green).
+
+## Pilot Batch 13 — persistent audit and evidence chain (2026-07-09)
+
+Closes P0-7 (in-memory audit/data-access sinks).
+
+- Hash-chained audit + data access events persist in the tenant's own data plane;
+  in stage/prod, requests without a data plane are refused 503 (`audit_unavailable`)
+  so the in-memory sinks are unreachable.
+- `GET /audit/verify-chain` detects both content tampering (hash recompute) and
+  deletions (previous-hash reference check); `/revision` shows a tamper warning.
+- Evidence: 7 audit tests on live Postgres incl. append-only DB trigger and a
+  forged event breaking verification (84 API tests green).
+
+## Pilot Batch 14 — RLS and database security (2026-07-09)
+
+Closes P1-13 (RLS coverage and testing).
+
+- Every table documented as role-policy, service-only (default deny), or no-PII
+  reference (migration `202607070035`); auditors/DPO/CISO can read the reveal log.
+- `pnpm db:rls-test` extended to 17 tests (select/insert/update/delete, denials
+  provably RLS not NOT-NULL, protected identity, service-only default deny,
+  cross-tenant isolation); smoke tests extended to 15 incl. an RLS-enabled sweep
+  over sensitive tables and a PUBLIC/anon grant check. All PASS on Postgres 16.
+
+## Pilot Batch 15 — worker queue and background jobs (2026-07-09)
+
+Closes P0-10 (no-op worker) and P0-11 (no queue).
+
+- `PgQueue` (FOR UPDATE SKIP LOCKED, retries, dead-letter) + continuous worker
+  with `/health`; real handlers for the pilot job families; everything else FAILS
+  with `NOT_IMPLEMENTED` — passthrough success removed. Job status UI at
+  `/installningar/jobb`.
+- Evidence: 10 worker tests incl. double-claim protection on live Postgres and a
+  manual worker run processing real jobs.
+
+## Pilot Batches 16–17 — payment control, control cases, notifications (2026-07-09)
+
+Closes P1-6 and P1-7.
+
+- The 25 LSS + 25 EA rules run against the tenant's real imported data; open
+  high/critical flags become control cases idempotently; full case workflow
+  (assign, notes, transitions, outcomes) with complete event + audit trails.
+- UBM notification manual intake -> confidence matching (always access-logged) ->
+  control case -> outcome -> closure; no transmit endpoint exists (verified 404).
+- Evidence: 8 tests on live Postgres (92 API tests green at the time).
+
+## Pilot Batch 18 — reports (2026-07-09)
+
+Closes P1-8: 14 permission-gated reports computed live from the data plane with
+CSV/XLSX/JSON export (XLSX round-trip verified with the in-house reader); every
+report run audited; per-report permission enforcement verified (97 API tests).
+PDF export intentionally postponed and documented.
+
+## Pilot Batch 19 — admin, support, superadmin without PII (2026-07-09)
+
+Closes P1-9.
+
+- Municipality admin: users/roles with mandatory reasons and audited grant/revoke;
+  support-access review lists every vendor JIT/break-glass session.
+- Vendor superadmin remains the control plane only (admin token, PII structurally
+  rejected at API boundary and store layer; no route into municipal data planes).
+- Evidence: 4 admin tests on live Postgres (101 API tests green).
+
+## Pilot Batch 20 — security hardening (2026-07-09)
+
+Closes P1-10.
+
+- Security headers on web (CSP, HSTS stage/prod, frame-ancestors none) and API;
+  sliding-window rate limits per route class with 429 + Retry-After; CSRF via
+  Server Actions + explicit origin checks; body/upload size limits; safe error
+  handler (generic Swedish message + correlation id, no stack traces).
+- Legal/privacy UI driven by real readiness gates; retention policies, legal
+  holds (audited) and disposal queue live on `/arkiv`.
+- Evidence: 5 security tests (106 API tests green).
+
+## Pilot Batch 21 — operational readiness (2026-07-09)
+
+Closes P1-11.
+
+- `/ready` with real dependency checks on API/control-plane/worker, `/health` on
+  web; failures return 503 with the failing check named, never stack traces.
+- Backup/restore runbook with gate evidence procedure; pilot go-live runbook with
+  kill-switch/rollback; monitoring doc updated.
+- Evidence: 3 readiness tests (109 API tests green).
+
+## Pilot Batch 22 — explicit pilot mode (2026-07-09)
+
+Closes P1-12.
+
+- `tenants.status = 'pilot'` flows end-to-end into the web pilot banner; 18
+  pilot-scope gates with separate pilot-vs-production approval computation;
+  control plane refuses `ubm_official_transport` for everyone (422) and
+  `ubm_recurring_reporting_2029` for non-live tenants (422), on top of the
+  env-level guard.
+
+## Pilot Batch 23 — synthetic pilot demo seed (2026-07-09)
+
+- `pnpm demo:pilot-seed`: coherent synthetic dataset (personnummer month 90+,
+  `is_synthetic`, `DEMO-` prefixes) with hard prod refusal (probed by
+  `production:safety-check`, 14/14), stage confirmation requirement, refusal of
+  data planes containing real persons, and a verified full `--reset`.
+
+## Pilot Batch 24 — end-to-end suite (2026-07-09)
+
+Closes P1-14.
+
+- `apps/api/src/e2e-pilot.test.ts` boots a real control plane (admin + directory
+  tokens) and the API against live Postgres and covers the 9 required flows:
+  provisioning/fail-closed resolution, authn/authz, import with lineage, payment
+  control to a decided case, full UBM request -> package -> hash-verified
+  download -> receipt -> closure, document vault incl. refusal of infected
+  uploads, notifications, evidence-chain verification over everything written,
+  and readiness gates with waiver enforcement.
+- Evidence: e2e 9/9 PASS; full API suite 118 tests PASS; runs in CI's database job.
+
+## Pilot Batch 25 — documentation and handover (2026-07-09)
+
+Closes P1-15.
+
+- Created `docs/deployment/customer-pilot.md` (zero-to-pilot deployment guide) and
+  `docs/runbooks/incident-and-rollback-runbook.md`; rewrote
+  `docs/user-manuals/README.md` as a role-based user guide matching the shipped
+  product; expanded `docs/deployment/README.md` and `docs/exit-plan/README.md`
+  from stubs (incl. an honest note that the automated exit-export worker job is
+  NOT_IMPLEMENTED during the pilot); corrected the root README "production-grade"
+  overstatement; added this per-batch evidence and the final assessment below.
+
+---
+
+# Final assessment (2026-07-09): pilot-ready vs production-blocked
+
+## Ready for controlled customer pilots
+
+All 14 P0 blockers and all 15 P1 pilot requirements from
+`docs/audits/customer-pilot-readiness-audit.md` are closed. Concretely:
+
+- Real tenant setup on a persistent, token-authenticated, no-PII control plane;
+  unknown/unverified domains fail closed with 421.
+- Verified Entra ID/OIDC login with encrypted sessions; RBAC enforced in the
+  backend on every sensitive route; spoofed headers rejected.
+- Controlled import (CSV/XLSX) with mapping, row-level validation, preview,
+  idempotent commit, rollback and lineage.
+- UBM requests through the full manual 16-state workflow with real-data
+  eligibility; export proposals under maker-checker with deterministic,
+  hash-verified packages; audited download, manual sending and receipts.
+- Payment control (25+25 rules) over imported data with a complete control-case
+  workflow; manual UBM notification intake with matching and outcomes.
+- Hash-chained audit + data access logs persisted in the municipality's own data
+  plane with tamper-detecting verification; 14 reports with exports.
+- Fail-closed production configuration proven by `production:safety-check`
+  (14/14) and dedicated tests; e2e suite (9 flows) green in CI.
+
+## Not in the pilot (enforced, not just documented)
+
+- Official UBM transport: no code path exists; the feature flag is refused by the
+  control plane and the env guard refuses startup. Packages are explicitly marked
+  `notOfficialUbmFormat`.
+- Recurring 2029 reporting: feature-flagged off; refused for pilot tenants.
+- Automated intake channels (API/e-mail), source-system-specific adapters
+  (Procapita/Treserva/…): registered but marked unavailable; generic CSV/XLSX
+  covers the pilot.
+- SAML IdP (abstraction refuses; Entra ID/OIDC covers the pilot), automated
+  SIEM export, PDF report export, automated exit-export/reconciliation/archive
+  worker jobs (all fail `NOT_IMPLEMENTED`, never fake success).
+
+## Production-blocked (per municipality, gated in `/onboarding`)
+
+Production go-live remains blocked per tenant until the production-scope gates
+pass with evidence: signed release with the vendor key (repo release stays
+UNSIGNED, valid only outside stage/prod), backup + restore test on the tenant's
+data plane, accessibility audit with assistive-technology users, penetration
+test, PUB/DPA + DPIA signed, exit-export test, incident contacts, and the
+formal production approval (separate from pilot approval). These are enforced by
+`production_go_live_status` and the onboarding approval endpoint — not by
+documentation.
