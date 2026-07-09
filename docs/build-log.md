@@ -1147,3 +1147,53 @@ error`) so pages render honest states without leaking backend details.
 - **Security notes:** every step audited; person searches and export-data collection
   always write data access events; no official transport can be configured.
 - **Status:** production-safe.
+
+## Pilot Batch 11 — UBM export proposals and packaging
+
+- **Implemented (`apps/api/src/export-routes.ts`):**
+  - `GET /ubm/export-proposals/:id` — full detail (rows with included fields,
+    workflow, submissions); reads are data-access-logged.
+  - `POST .../submit-for-review` — draft -> in_review with a persisted maker-checker
+    workflow (`approval_workflows`/`approval_steps`); blocked proposals are refused
+    with an explanation.
+  - `POST .../approve` — maker-checker enforced in code AND by the existing DB
+    trigger (creator can never approve); decision recorded with comment; proposal ->
+    approved/rejected; UBM request advanced.
+  - `POST .../package` — builds a deterministic zip (manifest.json, data.json,
+    export-summary.md, checksums.txt) covering all required manifest content:
+    request id/number, matched subjects, data categories, included/excluded fields,
+    legal basis, purpose, classification, secrecy assessment, documents + redaction
+    plan, lineage, eligibility/validation results, risk warnings, reviewer comments,
+    approver history, manifest + package hashes, signature status
+    (`unsigned_manual_pilot`) and an explicit `notOfficialUbmFormat: true` marker.
+    Stored as a `ubm_submissions` row (manifest + hashes; the zip is rebuilt
+    deterministically and hash-verified at download — no blob storage needed yet).
+  - `GET .../download` — integrity check against the recorded package hash (download
+    STOPS on mismatch), audit event `export.downloaded` + data access log per
+    download; zip streamed with correct headers.
+  - `POST .../register-sending` — manual channel + recipient reference recorded;
+    submission/proposal/request -> sent/exported; audit `ubm.export_sent`.
+  - `POST .../receipt` — receipt registered (`ubm_receipts`), submission/proposal/
+    request -> receipt_received; audit `export.receipt_registered`; request can then
+    be closed.
+  - Web `/exportforslag/[id]`: status-driven actions (submit/approve with decision +
+    comment/package/register sending/receipt), blocked explanations, package hashes,
+    download link routed through `/exportforslag/[id]/download` (auth + tenant
+    forwarded; audit happens server-side).
+- **Files:** `apps/api/src/export-routes.ts`, `apps/api/src/server.ts`,
+  `packages/import-engine/src/xlsx.ts` (`buildZipArchive` export),
+  `apps/web/app/exportforslag/[id]/{page.tsx,download/route.ts}`.
+- **Migrations:** none new (uses ubm_submissions/ubm_receipts/approval tables).
+- **Tests:** 5 export lifecycle tests on live Postgres: package refused before
+  approval; maker cannot approve own proposal (422); different checker approves ->
+  package -> download with hash verification (sha256 of the downloaded zip matches
+  the recorded package hash; manifest/checksums/summary present); manual sending +
+  receipt -> request reaches receipt_received -> closed; blocked proposals cannot be
+  submitted or packaged. 71 API tests green.
+- **Commands run:** full typecheck/test/lint/build/safety-check/format.
+- **Remaining:** document attachments in packages activate with the vault (Batch 12).
+- **Env vars:** none new.
+- **Security notes:** unapproved/sensitive data cannot enter a package (only
+  proposal rows created under eligibility control are included; blocked proposals
+  cannot package); every download is audited and access-logged.
+- **Status:** production-safe.

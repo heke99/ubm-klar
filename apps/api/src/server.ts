@@ -52,6 +52,7 @@ import type { TenantDataPlanePool } from './data-plane';
 import { createRepositories, WaiverValidationError, type Repositories } from './repositories';
 import { registerImportRoutes } from './import-routes';
 import { registerUbmRoutes } from './ubm-routes';
+import { registerExportRoutes } from './export-routes';
 
 /**
  * UBM Klar backend API. All sensitive operations run here, server-side:
@@ -642,6 +643,12 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
     auditLogger,
     requirePermission: (request, reply, permission) =>
       requirePermission(request, reply, permission, { kind: 'ubm_request' }),
+  });
+
+  registerExportRoutes(app, {
+    auditLogger,
+    requirePermission: (request, reply, permission) =>
+      requirePermission(request, reply, permission, { kind: 'ubm_export_proposal' }),
   });
 
   app.get('/documents', async (request, reply) => {

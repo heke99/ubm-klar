@@ -206,6 +206,11 @@ function escapeXml(value: string): string {
     .replaceAll('"', '&quot;');
 }
 
+/** Generic stored-zip builder (deterministic: no timestamps) — also used for export packages. */
+export function buildZipArchive(entries: Array<{ fileName: string; data: Buffer }>): Buffer {
+  return buildZip(entries);
+}
+
 function crc32(data: Buffer): number {
   let crc = 0xffffffff;
   for (let i = 0; i < data.length; i++) {
