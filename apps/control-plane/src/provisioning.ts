@@ -157,7 +157,11 @@ export class ProvisioningService {
     return run;
   }
 
-  private markStep(run: ProvisioningRun, stepId: ProvisioningStepId, status: ProvisioningStep['status']) {
+  private markStep(
+    run: ProvisioningRun,
+    stepId: ProvisioningStepId,
+    status: ProvisioningStep['status'],
+  ) {
     const step = run.steps.find((s) => s.id === stepId);
     if (step) {
       step.status = status;

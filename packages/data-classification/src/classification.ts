@@ -1,11 +1,7 @@
 import type { CiaClassification, DataClass } from '@ubm-klar/shared-types';
 
 export type ClassificationTargetKind =
-  | 'field'
-  | 'document_type'
-  | 'integration'
-  | 'export'
-  | 'table';
+  'field' | 'document_type' | 'integration' | 'export' | 'table';
 
 export interface ClassificationRecord {
   targetKind: ClassificationTargetKind;

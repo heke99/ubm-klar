@@ -63,8 +63,16 @@ export interface LssProviderCtx {
   orgNumber: string;
   status: 'active' | 'suspended' | 'under_review' | 'terminated';
   contractedOrgNumbers: string[];
-  ivoPermits: Array<{ status: 'active' | 'expired' | 'revoked' | 'pending'; validFrom: string; validTo?: string }>;
-  contracts: Array<{ status: 'active' | 'expired' | 'terminated'; validFrom: string; validTo?: string }>;
+  ivoPermits: Array<{
+    status: 'active' | 'expired' | 'revoked' | 'pending';
+    validFrom: string;
+    validTo?: string;
+  }>;
+  contracts: Array<{
+    status: 'active' | 'expired' | 'terminated';
+    validFrom: string;
+    validTo?: string;
+  }>;
   approvedAccountReferences: string[];
   riskFlags: Array<{ flagKind: string; manuallyReviewed: boolean }>;
   lastAccountChangeAt?: string;
@@ -80,7 +88,14 @@ export interface LssDocumentCtx {
   id: string;
   personId?: string;
   documentType: string;
-  documentClass: 'standard' | 'sensitive' | 'medical' | 'protected_identity' | 'children' | 'disclosure' | 'archive';
+  documentClass:
+    | 'standard'
+    | 'sensitive'
+    | 'medical'
+    | 'protected_identity'
+    | 'children'
+    | 'disclosure'
+    | 'archive';
 }
 
 export interface LssDocumentAccessCtx {

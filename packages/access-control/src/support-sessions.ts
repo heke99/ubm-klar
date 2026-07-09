@@ -103,9 +103,7 @@ export function createBreakGlassSession(
     throw new SupportSessionError('Break-glass requires the break_glass_admin role.');
   }
   if (request.reason.trim().length < 20) {
-    throw new SupportSessionError(
-      'Break-glass requires a substantive reason (min 20 characters).',
-    );
+    throw new SupportSessionError('Break-glass requires a substantive reason (min 20 characters).');
   }
   if (
     request.requestedDurationMs <= 0 ||

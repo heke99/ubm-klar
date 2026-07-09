@@ -87,7 +87,9 @@ export function evaluateUbmEligibility(input: UbmEligibilityInput): UbmEligibili
 
   // Q1-2: request existence and validity
   if (!input.hasUbmRequest) {
-    block('Ingen registrerad UBM-förfrågan finns. Uppgifter får inte skickas utan förfrågan (fas 1).');
+    block(
+      'Ingen registrerad UBM-förfrågan finns. Uppgifter får inte skickas utan förfrågan (fas 1).',
+    );
   } else if (!input.requestValidAndRegistered) {
     block('Förfrågan är inte validerad och registrerad.');
   }
@@ -121,12 +123,16 @@ export function evaluateUbmEligibility(input: UbmEligibilityInput): UbmEligibili
     outcomes.add('requires_legal_review');
     outcomes.add('requires_dpo_review');
     outcomes.add('requires_manual_review');
-    explanations.push('Skyddad identitet berörs: juridisk granskning, DPO-granskning och manuell hantering krävs.');
+    explanations.push(
+      'Skyddad identitet berörs: juridisk granskning, DPO-granskning och manuell hantering krävs.',
+    );
   }
   if (input.involvesHealthMedicalData) {
     outcomes.add('requires_redaction');
     outcomes.add('requires_legal_review');
-    explanations.push('Hälso-/medicinska uppgifter berörs: maskning och juridisk granskning krävs.');
+    explanations.push(
+      'Hälso-/medicinska uppgifter berörs: maskning och juridisk granskning krävs.',
+    );
   }
   if (input.involvesChildrenData) {
     outcomes.add('requires_legal_review');
@@ -153,7 +159,9 @@ export function evaluateUbmEligibility(input: UbmEligibilityInput): UbmEligibili
   }
   if (!input.dataLineageComplete) {
     outcomes.add('requires_data_lineage_fix');
-    blockers.push('Datalinjen (lineage) är ofullständig: alla fält måste kunna spåras till källsystem.');
+    blockers.push(
+      'Datalinjen (lineage) är ofullständig: alla fält måste kunna spåras till källsystem.',
+    );
   }
   if (!input.classificationComplete) {
     outcomes.add('requires_classification_review');

@@ -23,7 +23,12 @@ import {
 } from '@ubm-klar/tenant-resolver';
 import { evaluateUbmEligibility, type UbmEligibilityInput } from '@ubm-klar/ubm-eligibility-engine';
 import { RuleEngine } from '@ubm-klar/rule-engine';
-import { ALL_LSS_RULES, buildLssDashboard, generateLssDemoData, type LssRuleContext } from '@ubm-klar/lss-domain';
+import {
+  ALL_LSS_RULES,
+  buildLssDashboard,
+  generateLssDemoData,
+  type LssRuleContext,
+} from '@ubm-klar/lss-domain';
 import {
   ALL_EA_RULES,
   buildEaDashboard,
@@ -94,7 +99,8 @@ function parseSubject(request: FastifyRequest): AccessSubject | undefined {
     .split(',')
     .map((r) => r.trim())
     .filter(Boolean);
-  const sessionKind = (request.headers['x-session-kind'] as AccessSubject['sessionKind']) ?? 'normal';
+  const sessionKind =
+    (request.headers['x-session-kind'] as AccessSubject['sessionKind']) ?? 'normal';
   const expiresHeader = request.headers['x-session-expires-at'];
   return {
     userId,
@@ -341,7 +347,9 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
       return reply.status(201).send(session);
     } catch (error) {
       if (error instanceof SupportSessionError) {
-        return reply.status(422).send({ error: 'support_session_rejected', message: error.message });
+        return reply
+          .status(422)
+          .send({ error: 'support_session_rejected', message: error.message });
       }
       throw error;
     }

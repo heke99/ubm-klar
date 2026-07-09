@@ -36,7 +36,14 @@ export function createRng(seed: number): () => number {
 }
 
 const GIVEN_NAMES = ['Testa', 'Demo', 'Fiktiv', 'Övning', 'Prov', 'Exempel', 'Syntet', 'Modell'];
-const FAMILY_NAMES = ['Testsson', 'Demosson', 'Fiktivsson', 'Övningsson', 'Provsson', 'Exempelsson'];
+const FAMILY_NAMES = [
+  'Testsson',
+  'Demosson',
+  'Fiktivsson',
+  'Övningsson',
+  'Provsson',
+  'Exempelsson',
+];
 
 function pick<T>(rng: () => number, items: T[]): T {
   return items[Math.floor(rng() * items.length)]!;

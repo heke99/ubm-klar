@@ -8,8 +8,28 @@ import type { EaRuleContext } from './types';
 
 describe('EA demo data', () => {
   it('generates requested volumes deterministically without real PII', () => {
-    const a = generateEaDemoData({ seed: 7, personCount: 100, householdCount: 60, applicationCount: 200, decisionCount: 200, incomeCount: 300, housingCount: 100, paymentCount: 250, recoveryClaimCount: 10 });
-    const b = generateEaDemoData({ seed: 7, personCount: 100, householdCount: 60, applicationCount: 200, decisionCount: 200, incomeCount: 300, housingCount: 100, paymentCount: 250, recoveryClaimCount: 10 });
+    const a = generateEaDemoData({
+      seed: 7,
+      personCount: 100,
+      householdCount: 60,
+      applicationCount: 200,
+      decisionCount: 200,
+      incomeCount: 300,
+      housingCount: 100,
+      paymentCount: 250,
+      recoveryClaimCount: 10,
+    });
+    const b = generateEaDemoData({
+      seed: 7,
+      personCount: 100,
+      householdCount: 60,
+      applicationCount: 200,
+      decisionCount: 200,
+      incomeCount: 300,
+      housingCount: 100,
+      paymentCount: 250,
+      recoveryClaimCount: 10,
+    });
     expect(a.counts).toEqual(b.counts);
     expect(a.counts.persons).toBe(100);
     // synthetic personnummer: month digit position uses 9x months

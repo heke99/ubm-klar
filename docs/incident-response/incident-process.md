@@ -2,12 +2,12 @@
 
 ## Severity matrix
 
-| Severity | Definition | Response |
-| --- | --- | --- |
+| Severity | Definition                                          | Response                              |
+| -------- | --------------------------------------------------- | ------------------------------------- |
 | Critical | Data breach, cross-tenant exposure, production down | Immediate; municipality notified < 1h |
-| High | Sensitive-data risk, payment control unavailable | < 4h |
-| Medium | Degraded function, failed imports | < 1 business day |
-| Low | Cosmetic/minor | Planned |
+| High     | Sensitive-data risk, payment control unavailable    | < 4h                                  |
+| Medium   | Degraded function, failed imports                   | < 1 business day                      |
+| Low      | Cosmetic/minor                                      | Planned                               |
 
 ## Process
 

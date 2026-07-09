@@ -230,8 +230,7 @@ export function reconcilePaymentFile(input: ReconciliationInput): Reconciliation
         rowId: row.id,
         resultKind: 'recipient_mismatch',
         severity: 'critical',
-        explanation:
-          'Kontot i betalningsfilen avviker från verifierat konto i mottagarregistret.',
+        explanation: 'Kontot i betalningsfilen avviker från verifierat konto i mottagarregistret.',
         matchedPaymentId: match.id,
         evidenceReferences: [...evidence, 'payment_recipient_registry'],
       });

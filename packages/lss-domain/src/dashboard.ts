@@ -52,9 +52,7 @@ export function buildLssDashboard(
   };
 
   const minSeverityIndex = filters.minSeverity ? SEVERITY_ORDER.indexOf(filters.minSeverity) : 0;
-  const filteredFlags = flags.filter(
-    (f) => SEVERITY_ORDER.indexOf(f.severity) >= minSeverityIndex,
-  );
+  const filteredFlags = flags.filter((f) => SEVERITY_ORDER.indexOf(f.severity) >= minSeverityIndex);
 
   const matches = matchDecisions(filteredCtx);
   const flagsBySeverity: Record<string, number> = {};

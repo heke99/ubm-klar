@@ -80,12 +80,22 @@ describe('resolveSystemOfRecord', () => {
   ];
 
   it('prefers field-specific definitions', () => {
-    const resolved = resolveSystemOfRecord(definitions, 'lss_decision', 'hours_per_week', '2026-07-01');
+    const resolved = resolveSystemOfRecord(
+      definitions,
+      'lss_decision',
+      'hours_per_week',
+      '2026-07-01',
+    );
     expect(resolved?.sourceSystemId).toBe('sys-field');
   });
 
   it('falls back to entity-wide definitions', () => {
-    const resolved = resolveSystemOfRecord(definitions, 'lss_decision', 'other_field', '2026-07-01');
+    const resolved = resolveSystemOfRecord(
+      definitions,
+      'lss_decision',
+      'other_field',
+      '2026-07-01',
+    );
     expect(resolved?.sourceSystemId).toBe('sys-entity');
   });
 

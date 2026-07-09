@@ -124,8 +124,28 @@ describe('matching', () => {
 
 describe('demo data', () => {
   it('generates the requested volumes deterministically', () => {
-    const a = generateLssDemoData({ seed: 42, personCount: 50, decisionCount: 100, providerCount: 10, timeReportCount: 200, invoiceCount: 150, paymentCount: 300, recoveryClaimCount: 5, ubmRequestCount: 3 });
-    const b = generateLssDemoData({ seed: 42, personCount: 50, decisionCount: 100, providerCount: 10, timeReportCount: 200, invoiceCount: 150, paymentCount: 300, recoveryClaimCount: 5, ubmRequestCount: 3 });
+    const a = generateLssDemoData({
+      seed: 42,
+      personCount: 50,
+      decisionCount: 100,
+      providerCount: 10,
+      timeReportCount: 200,
+      invoiceCount: 150,
+      paymentCount: 300,
+      recoveryClaimCount: 5,
+      ubmRequestCount: 3,
+    });
+    const b = generateLssDemoData({
+      seed: 42,
+      personCount: 50,
+      decisionCount: 100,
+      providerCount: 10,
+      timeReportCount: 200,
+      invoiceCount: 150,
+      paymentCount: 300,
+      recoveryClaimCount: 5,
+      ubmRequestCount: 3,
+    });
     expect(a.counts).toEqual({
       persons: 50,
       decisions: 100,
@@ -140,7 +160,16 @@ describe('demo data', () => {
   });
 
   it('produces only structurally invalid synthetic personnummer', () => {
-    const dataset = generateLssDemoData({ personCount: 100, decisionCount: 10, providerCount: 5, timeReportCount: 10, invoiceCount: 10, paymentCount: 10, recoveryClaimCount: 2, ubmRequestCount: 1 });
+    const dataset = generateLssDemoData({
+      personCount: 100,
+      decisionCount: 10,
+      providerCount: 5,
+      timeReportCount: 10,
+      invoiceCount: 10,
+      paymentCount: 10,
+      recoveryClaimCount: 2,
+      ubmRequestCount: 1,
+    });
     for (const person of dataset.persons) {
       expect(person.isSynthetic).toBe(true);
       expect(isSyntheticPersonnummer(person.syntheticPersonnummer)).toBe(true);

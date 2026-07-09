@@ -6,14 +6,14 @@ production personal data.
 
 ## Processing register (per module)
 
-| Processing | Purpose | Legal basis (GDPR) | National basis | Data categories |
-| --- | --- | --- | --- | --- |
-| LSS case handling support | Structure/quality-assure decisions, hours, providers, payments | Art. 6(1)(e); Art. 9(2)(b) for health data | LSS (1993:387), SoL | Identity, decisions, need assessments (health), hours, providers, payments |
-| Economic assistance support | Structure households, income, housing, payments | Art. 6(1)(e) | SoL (2001:453) 4 kap. | Identity, household, income, housing, payments |
-| UBM request handling | Answer statutory requests from Utbetalningsmyndigheten | Art. 6(1)(c) | Lag (2023:456) om uppgiftsskyldighet | Data covered by the request, minimized per eligibility engine |
-| Payment control | Detect/stop incorrect payments | Art. 6(1)(e) | Kommunallagen, SoL/LSS | Payments, recipients, accounts (masked by default) |
-| Audit & data access logging | Security, internal secrecy supervision | Art. 6(1)(c),(e) | OSL, säkerhetskrav | User ids, access events, reasons |
-| Archive/retention | Statutory archiving | Art. 6(1)(c) | Arkivlagen | All of the above per retention schedule |
+| Processing                  | Purpose                                                        | Legal basis (GDPR)                         | National basis                       | Data categories                                                            |
+| --------------------------- | -------------------------------------------------------------- | ------------------------------------------ | ------------------------------------ | -------------------------------------------------------------------------- |
+| LSS case handling support   | Structure/quality-assure decisions, hours, providers, payments | Art. 6(1)(e); Art. 9(2)(b) for health data | LSS (1993:387), SoL                  | Identity, decisions, need assessments (health), hours, providers, payments |
+| Economic assistance support | Structure households, income, housing, payments                | Art. 6(1)(e)                               | SoL (2001:453) 4 kap.                | Identity, household, income, housing, payments                             |
+| UBM request handling        | Answer statutory requests from Utbetalningsmyndigheten         | Art. 6(1)(c)                               | Lag (2023:456) om uppgiftsskyldighet | Data covered by the request, minimized per eligibility engine              |
+| Payment control             | Detect/stop incorrect payments                                 | Art. 6(1)(e)                               | Kommunallagen, SoL/LSS               | Payments, recipients, accounts (masked by default)                         |
+| Audit & data access logging | Security, internal secrecy supervision                         | Art. 6(1)(c),(e)                           | OSL, säkerhetskrav                   | User ids, access events, reasons                                           |
+| Archive/retention           | Statutory archiving                                            | Art. 6(1)(c)                               | Arkivlagen                           | All of the above per retention schedule                                    |
 
 ## Principles enforced in code
 

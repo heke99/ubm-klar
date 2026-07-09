@@ -80,12 +80,6 @@ export type UbmEligibilityOutcome =
 export type RiskSeverity = 'info' | 'low' | 'medium' | 'high' | 'critical';
 
 export type ControlCaseStatus =
-  | 'open'
-  | 'assigned'
-  | 'investigating'
-  | 'awaiting_decision'
-  | 'decided'
-  | 'closed'
-  | 'reopened';
+  'open' | 'assigned' | 'investigating' | 'awaiting_decision' | 'decided' | 'closed' | 'reopened';
 
 export type ApprovalDecision = 'approved' | 'rejected' | 'returned_for_changes';

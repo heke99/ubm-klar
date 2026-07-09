@@ -1,7 +1,4 @@
-import {
-  ClassificationRegistry,
-  type ClassificationRecord,
-} from '@ubm-klar/data-classification';
+import { ClassificationRegistry, type ClassificationRecord } from '@ubm-klar/data-classification';
 
 /**
  * Default information classification for the UBM Klar data plane.

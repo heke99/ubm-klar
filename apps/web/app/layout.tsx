@@ -48,7 +48,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 <li key={area.href} style={{ marginBottom: 'var(--space-1)' }}>
                   <a
                     href={area.href}
-                    style={{ display: 'block', padding: 'var(--space-2)', textDecoration: 'none', borderRadius: 'var(--radius)' }}
+                    style={{
+                      display: 'block',
+                      padding: 'var(--space-2)',
+                      textDecoration: 'none',
+                      borderRadius: 'var(--radius)',
+                    }}
                   >
                     {area.labelSv}
                   </a>

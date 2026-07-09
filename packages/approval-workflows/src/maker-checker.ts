@@ -121,9 +121,7 @@ export function decideStep(
   if (step.decision) {
     throw new ApprovalError('Step already decided', 'step_already_decided');
   }
-  const priorUndecided = workflow.steps.find(
-    (s) => s.stepOrder < step.stepOrder && !s.decision,
-  );
+  const priorUndecided = workflow.steps.find((s) => s.stepOrder < step.stepOrder && !s.decision);
   if (priorUndecided) {
     throw new ApprovalError(
       `Step ${priorUndecided.stepOrder} must be decided first`,

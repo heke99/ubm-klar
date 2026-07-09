@@ -23,13 +23,17 @@ export default function ArkivPage() {
               <td>EB-ärenden</td>
               <td>Ärende avslutat</td>
               <td>5 år</td>
-              <td><StatusBadge status="Gallras" tone="info" /></td>
+              <td>
+                <StatusBadge status="Gallras" tone="info" />
+              </td>
             </tr>
             <tr>
               <td>LSS-beslut</td>
               <td>Beslut upphört</td>
               <td>10 år</td>
-              <td><StatusBadge status="Arkiveras" tone="info" /></td>
+              <td>
+                <StatusBadge status="Arkiveras" tone="info" />
+              </td>
             </tr>
           </tbody>
         </table>

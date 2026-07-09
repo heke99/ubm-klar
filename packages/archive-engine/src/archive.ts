@@ -4,11 +4,7 @@ export interface RetentionRule {
   ruleKey: string;
   classificationKey: string;
   triggerEvent:
-    | 'case_closed'
-    | 'decision_expired'
-    | 'payment_completed'
-    | 'person_deceased'
-    | 'fixed_date';
+    'case_closed' | 'decision_expired' | 'payment_completed' | 'person_deceased' | 'fixed_date';
   retentionYears: number;
   action: 'dispose' | 'archive' | 'review';
   isActive: boolean;

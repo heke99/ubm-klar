@@ -131,7 +131,13 @@ describe('EA rules 8-9: documentation', () => {
   it('rule 8 flags housing cost without document', () => {
     const flags = runRule('ea_housing_cost_without_document', {
       housingRecords: [
-        { id: 'hr1', householdId: 'h1', monthlyCostSek: 8000, hasContractDocument: false, hasCostDocumentLink: false },
+        {
+          id: 'hr1',
+          householdId: 'h1',
+          monthlyCostSek: 8000,
+          hasContractDocument: false,
+          hasCostDocumentLink: false,
+        },
       ],
     });
     expect(flags).toHaveLength(1);
@@ -246,7 +252,13 @@ describe('EA rules 16-20: consistency', () => {
   it('rule 18 flags housing cost without document link', () => {
     const flags = runRule('ea_housing_cost_without_document_link', {
       housingRecords: [
-        { id: 'hr1', householdId: 'h1', monthlyCostSek: 8000, hasContractDocument: true, hasCostDocumentLink: false },
+        {
+          id: 'hr1',
+          householdId: 'h1',
+          monthlyCostSek: 8000,
+          hasContractDocument: true,
+          hasCostDocumentLink: false,
+        },
       ],
     });
     expect(flags).toHaveLength(1);
@@ -282,7 +294,13 @@ describe('EA rules 21-25: files, recipients and access', () => {
     const flags = runRule('ea_payment_file_row_without_decision', {
       decisions: [{ ...decision, decisionKind: 'rejection' }],
       paymentFileRows: [
-        { id: 'row1', householdId: 'h1', amountSek: 5000, paymentDate: '2026-06-25', matchedDecisionId: 'd1' },
+        {
+          id: 'row1',
+          householdId: 'h1',
+          amountSek: 5000,
+          paymentDate: '2026-06-25',
+          matchedDecisionId: 'd1',
+        },
         { id: 'row2', householdId: 'h1', amountSek: 5000, paymentDate: '2026-06-25' },
       ],
     });

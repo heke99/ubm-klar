@@ -12,16 +12,33 @@ export const NAV_AREAS: NavArea[] = [
     href: '/',
     labelSv: 'Översikt',
     roles: [
-      'municipality_admin', 'system_owner', 'social_services_manager', 'lss_case_worker',
-      'economic_assistance_case_worker', 'controller', 'finance_officer', 'lawyer', 'dpo',
-      'information_security_officer', 'internal_auditor', 'ubm_export_manager',
-      'control_investigator', 'read_only_reviewer',
+      'municipality_admin',
+      'system_owner',
+      'social_services_manager',
+      'lss_case_worker',
+      'economic_assistance_case_worker',
+      'controller',
+      'finance_officer',
+      'lawyer',
+      'dpo',
+      'information_security_officer',
+      'internal_auditor',
+      'ubm_export_manager',
+      'control_investigator',
+      'read_only_reviewer',
     ],
   },
   {
     href: '/ubm-beredskap',
     labelSv: 'UBM-beredskap',
-    roles: ['municipality_admin', 'system_owner', 'social_services_manager', 'ubm_export_manager', 'dpo', 'lawyer'],
+    roles: [
+      'municipality_admin',
+      'system_owner',
+      'social_services_manager',
+      'ubm_export_manager',
+      'dpo',
+      'lawyer',
+    ],
   },
   {
     href: '/ubm-forfragningar',
@@ -41,17 +58,33 @@ export const NAV_AREAS: NavArea[] = [
   {
     href: '/kontrollarenden',
     labelSv: 'Kontrollärenden',
-    roles: ['control_investigator', 'controller', 'social_services_manager', 'lawyer', 'read_only_reviewer'],
+    roles: [
+      'control_investigator',
+      'controller',
+      'social_services_manager',
+      'lawyer',
+      'read_only_reviewer',
+    ],
   },
   {
     href: '/lss',
     labelSv: 'LSS',
-    roles: ['lss_case_worker', 'social_services_manager', 'control_investigator', 'read_only_reviewer'],
+    roles: [
+      'lss_case_worker',
+      'social_services_manager',
+      'control_investigator',
+      'read_only_reviewer',
+    ],
   },
   {
     href: '/ekonomiskt-bistand',
     labelSv: 'Ekonomiskt bistånd',
-    roles: ['economic_assistance_case_worker', 'social_services_manager', 'control_investigator', 'read_only_reviewer'],
+    roles: [
+      'economic_assistance_case_worker',
+      'social_services_manager',
+      'control_investigator',
+      'read_only_reviewer',
+    ],
   },
   {
     href: '/betalningskontroll',
@@ -61,22 +94,46 @@ export const NAV_AREAS: NavArea[] = [
   {
     href: '/importer',
     labelSv: 'Importer',
-    roles: ['municipality_admin', 'system_owner', 'technical_admin_no_pii', 'controller', 'finance_officer'],
+    roles: [
+      'municipality_admin',
+      'system_owner',
+      'technical_admin_no_pii',
+      'controller',
+      'finance_officer',
+    ],
   },
   {
     href: '/dokument',
     labelSv: 'Dokument',
-    roles: ['lss_case_worker', 'economic_assistance_case_worker', 'lawyer', 'ubm_export_manager', 'control_investigator'],
+    roles: [
+      'lss_case_worker',
+      'economic_assistance_case_worker',
+      'lawyer',
+      'ubm_export_manager',
+      'control_investigator',
+    ],
   },
   {
     href: '/rapporter',
     labelSv: 'Rapporter',
-    roles: ['social_services_manager', 'municipality_admin', 'system_owner', 'controller', 'internal_auditor'],
+    roles: [
+      'social_services_manager',
+      'municipality_admin',
+      'system_owner',
+      'controller',
+      'internal_auditor',
+    ],
   },
   {
     href: '/revision',
     labelSv: 'Revision och loggar',
-    roles: ['internal_auditor', 'dpo', 'information_security_officer', 'municipality_admin', 'system_owner'],
+    roles: [
+      'internal_auditor',
+      'dpo',
+      'information_security_officer',
+      'municipality_admin',
+      'system_owner',
+    ],
   },
   {
     href: '/juridik',
@@ -109,4 +166,18 @@ export function navForRoles(roles: RoleId[]): NavArea[] {
  * verified SSO session; navigation is a convenience only — the backend and RLS
  * authorize every request regardless of what the frontend shows.
  */
-export const DEMO_ROLES: RoleId[] = ['social_services_manager', 'municipality_admin', 'ubm_export_manager', 'controller', 'lawyer', 'dpo', 'information_security_officer', 'internal_auditor', 'lss_case_worker', 'economic_assistance_case_worker', 'control_investigator', 'finance_officer', 'system_owner'];
+export const DEMO_ROLES: RoleId[] = [
+  'social_services_manager',
+  'municipality_admin',
+  'ubm_export_manager',
+  'controller',
+  'lawyer',
+  'dpo',
+  'information_security_officer',
+  'internal_auditor',
+  'lss_case_worker',
+  'economic_assistance_case_worker',
+  'control_investigator',
+  'finance_officer',
+  'system_owner',
+];

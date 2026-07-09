@@ -132,7 +132,9 @@ describe('LSS rule 4: time report missing', () => {
 
 describe('LSS rules 5-7: provider checks', () => {
   it('flags invoices from unknown or inactive providers', () => {
-    expect(runRule('lss_invoice_without_approved_provider', { invoices: [invoice] })).toHaveLength(1);
+    expect(runRule('lss_invoice_without_approved_provider', { invoices: [invoice] })).toHaveLength(
+      1,
+    );
     expect(
       runRule('lss_invoice_without_approved_provider', {
         invoices: [invoice],
@@ -150,9 +152,7 @@ describe('LSS rules 5-7: provider checks', () => {
   it('flags invoicing providers without active IVO permit', () => {
     const flags = runRule('lss_provider_without_ivo_permit', {
       invoices: [invoice],
-      providers: [
-        { ...provider, ivoPermits: [{ status: 'revoked', validFrom: '2024-01-01' }] },
-      ],
+      providers: [{ ...provider, ivoPermits: [{ status: 'revoked', validFrom: '2024-01-01' }] }],
     });
     expect(flags).toHaveLength(1);
     expect(flags[0]!.severity).toBe('critical');
@@ -171,8 +171,21 @@ describe('LSS rules 8-9: assistant time anomalies', () => {
   it('flags overlapping shifts for the same assistant', () => {
     const flags = runRule('lss_assistant_overlapping_time', {
       timeReports: [
-        { ...timeReport, id: 'tr1', rows: [{ assistantId: 'a1', workDate: '2026-02-03', startHour: 8, endHour: 16, hours: 8 }] },
-        { ...timeReport, id: 'tr2', personId: 'p2', rows: [{ assistantId: 'a1', workDate: '2026-02-03', startHour: 14, endHour: 22, hours: 8 }] },
+        {
+          ...timeReport,
+          id: 'tr1',
+          rows: [
+            { assistantId: 'a1', workDate: '2026-02-03', startHour: 8, endHour: 16, hours: 8 },
+          ],
+        },
+        {
+          ...timeReport,
+          id: 'tr2',
+          personId: 'p2',
+          rows: [
+            { assistantId: 'a1', workDate: '2026-02-03', startHour: 14, endHour: 22, hours: 8 },
+          ],
+        },
       ],
     });
     expect(flags).toHaveLength(1);
@@ -182,10 +195,13 @@ describe('LSS rules 8-9: assistant time anomalies', () => {
   it('flags unreasonable daily hours', () => {
     const flags = runRule('lss_assistant_unreasonable_hours', {
       timeReports: [
-        { ...timeReport, rows: [
-          { assistantId: 'a1', workDate: '2026-02-03', startHour: 0, endHour: 12, hours: 12 },
-          { assistantId: 'a1', workDate: '2026-02-03', startHour: 12, endHour: 23, hours: 11 },
-        ] },
+        {
+          ...timeReport,
+          rows: [
+            { assistantId: 'a1', workDate: '2026-02-03', startHour: 0, endHour: 12, hours: 12 },
+            { assistantId: 'a1', workDate: '2026-02-03', startHour: 12, endHour: 23, hours: 11 },
+          ],
+        },
       ],
     });
     expect(flags).toHaveLength(1);
@@ -300,8 +316,20 @@ describe('LSS rules 19-20: time report quality', () => {
   it('flags unusual hour increases (>50%)', () => {
     const flags = runRule('lss_unusual_hours_increase', {
       timeReports: [
-        { ...timeReport, id: 'tr1', periodStart: '2026-01-01', periodEnd: '2026-01-31', totalHours: 100 },
-        { ...timeReport, id: 'tr2', periodStart: '2026-02-01', periodEnd: '2026-02-28', totalHours: 180 },
+        {
+          ...timeReport,
+          id: 'tr1',
+          periodStart: '2026-01-01',
+          periodEnd: '2026-01-31',
+          totalHours: 100,
+        },
+        {
+          ...timeReport,
+          id: 'tr2',
+          periodStart: '2026-02-01',
+          periodEnd: '2026-02-28',
+          totalHours: 180,
+        },
       ],
     });
     expect(flags).toHaveLength(1);
@@ -314,8 +342,18 @@ describe('LSS rules 21-23: payment files and batches', () => {
     const flags = runRule('lss_payment_file_unknown_recipient', {
       providers: [provider],
       paymentFileRows: [
-        { id: 'row1', recipientOrgNumber: '559999-9999', amountSek: 10000, paymentDate: '2026-03-01' },
-        { id: 'row2', recipientOrgNumber: '556600-1234', amountSek: 5000, paymentDate: '2026-03-01' },
+        {
+          id: 'row1',
+          recipientOrgNumber: '559999-9999',
+          amountSek: 10000,
+          paymentDate: '2026-03-01',
+        },
+        {
+          id: 'row2',
+          recipientOrgNumber: '556600-1234',
+          amountSek: 5000,
+          paymentDate: '2026-03-01',
+        },
       ],
     });
     expect(flags).toHaveLength(1);

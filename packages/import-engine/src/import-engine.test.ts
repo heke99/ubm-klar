@@ -93,9 +93,19 @@ describe('batch helpers', () => {
   it('builds validation reports with correct statuses', () => {
     const allOk = buildValidationReport('b1', 10, [], 0);
     expect(allOk.status).toBe('loaded');
-    const partial = buildValidationReport('b1', 10, [{ batchId: 'b1', rowNumber: 3, errorCode: 'E', errorMessage: 'x' }], 0);
+    const partial = buildValidationReport(
+      'b1',
+      10,
+      [{ batchId: 'b1', rowNumber: 3, errorCode: 'E', errorMessage: 'x' }],
+      0,
+    );
     expect(partial.status).toBe('partially_loaded');
-    const allBad = buildValidationReport('b1', 1, [{ batchId: 'b1', rowNumber: 1, errorCode: 'E', errorMessage: 'x' }], 0);
+    const allBad = buildValidationReport(
+      'b1',
+      1,
+      [{ batchId: 'b1', rowNumber: 1, errorCode: 'E', errorMessage: 'x' }],
+      0,
+    );
     expect(allBad.status).toBe('rejected');
   });
 });

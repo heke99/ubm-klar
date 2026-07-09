@@ -7,14 +7,25 @@ import {
 } from './legal-sources';
 
 const versions: LegalSourceVersion[] = [
-  { sourceKey: 'lag_2023_456', version: '2026-07-01', status: 'active', effectiveFrom: '2026-07-01' },
+  {
+    sourceKey: 'lag_2023_456',
+    version: '2026-07-01',
+    status: 'active',
+    effectiveFrom: '2026-07-01',
+  },
   {
     sourceKey: 'lag_2023_456',
     version: '2029-07-01',
     status: 'awaiting_official_specification',
     effectiveFrom: '2029-07-01',
   },
-  { sourceKey: 'lss', version: '1', status: 'active', effectiveFrom: '2020-01-01', effectiveTo: '2025-12-31' },
+  {
+    sourceKey: 'lss',
+    version: '1',
+    status: 'active',
+    effectiveFrom: '2020-01-01',
+    effectiveTo: '2025-12-31',
+  },
   { sourceKey: 'lss', version: '2', status: 'active', effectiveFrom: '2026-01-01' },
 ];
 

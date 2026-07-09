@@ -30,7 +30,10 @@ export default function InstallningarPage() {
               {score.score === 100 ? (
                 <StatusBadge status="Klar" tone="success" />
               ) : (
-                <StatusBadge status={`${score.completedRequired}/${score.totalRequired} steg`} tone="warning" />
+                <StatusBadge
+                  status={`${score.completedRequired}/${score.totalRequired} steg`}
+                  tone="warning"
+                />
               )}
             </li>
           ))}

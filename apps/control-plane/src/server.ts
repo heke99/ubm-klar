@@ -271,7 +271,10 @@ export function buildControlPlaneServer(options: ControlPlaneServerOptions): Fas
     },
   );
 
-  app.post<{ Params: { tenantId: string; runId: string; stepId: string }; Body: { ok: boolean; noteNoPii?: string } }>(
+  app.post<{
+    Params: { tenantId: string; runId: string; stepId: string };
+    Body: { ok: boolean; noteNoPii?: string };
+  }>(
     '/tenants/:tenantId/provisioning-runs/:runId/steps/:stepId/complete',
     async (request, reply) => {
       try {

@@ -6,12 +6,15 @@ const root = new URL('..', import.meta.url).pathname;
 
 const sections = {
   architecture: 'Architecture decisions, deployment models, data plane isolation and diagrams.',
-  security: 'Security principles, threat model, service-role handling, RLS strategy and hardening checklists.',
+  security:
+    'Security principles, threat model, service-role handling, RLS strategy and hardening checklists.',
   gdpr: 'GDPR documentation: legal bases, purposes, records of processing, data subject rights.',
   dpia: 'Data protection impact assessment templates and completed assessments per module.',
   procurement: 'Procurement support: responsibility matrices, SLA/security/exit appendices.',
-  deployment: 'Deployment guides for Model B (vendor-hosted isolated) and Model C (municipality-owned).',
-  'incident-response': 'Incident response process, severity matrix, communication templates (no PII).',
+  deployment:
+    'Deployment guides for Model B (vendor-hosted isolated) and Model C (municipality-owned).',
+  'incident-response':
+    'Incident response process, severity matrix, communication templates (no PII).',
   support: 'Support model without PII, JIT access process, support bundle policy.',
   accessibility: 'WCAG 2.1 AA / EN 301 549 documentation and accessibility statement templates.',
   archive: 'Archive and retention documentation: classifications, retention rules, disposal.',

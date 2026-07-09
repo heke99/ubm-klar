@@ -6,7 +6,7 @@
       browser contexts; verified by tests)
 - [ ] One service key per tenant per environment (`DATA_PLANE_SERVICE_KEY__<SLUG>__<ENV>`);
       no shared keys across municipalities
-- [ ] Control plane stores key *references* only (400 on `service_role|secret` references)
+- [ ] Control plane stores key _references_ only (400 on `service_role|secret` references)
 - [ ] `pnpm security:secrets` clean; `pnpm security:deps` reviewed
 
 ## Tenant isolation

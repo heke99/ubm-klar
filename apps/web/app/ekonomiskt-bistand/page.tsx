@@ -16,13 +16,20 @@ export default function EkonomisktBistandPage() {
           { label: 'Bifall', value: dashboard.approvals, tone: 'success' },
           { label: 'Avslag', value: dashboard.rejections },
           { label: 'Utbetalt', value: formatSek(dashboard.paidAmountSekTotal) },
-          { label: 'Verifierad inkomst (andel)', value: `${Math.round(dashboard.verifiedIncomeShare * 100)} %` },
+          {
+            label: 'Verifierad inkomst (andel)',
+            value: `${Math.round(dashboard.verifiedIncomeShare * 100)} %`,
+          },
           { label: 'Inkomstanomalier', value: dashboard.incomeAnomalies, tone: 'warning' },
           { label: 'Hushållsanomalier', value: dashboard.householdAnomalies, tone: 'warning' },
           { label: 'Boendeanomalier', value: dashboard.housingAnomalies, tone: 'warning' },
           { label: 'Dubblettutbetalningar', value: dashboard.duplicatePayments, tone: 'danger' },
           { label: 'Kontoanomalier', value: dashboard.accountAnomalies, tone: 'danger' },
-          { label: 'Avslag med utbetalning', value: dashboard.rejectionWithPayment, tone: 'danger' },
+          {
+            label: 'Avslag med utbetalning',
+            value: dashboard.rejectionWithPayment,
+            tone: 'danger',
+          },
           { label: 'Öppna återkrav', value: dashboard.openRecoveryClaims, tone: 'warning' },
           { label: 'Riskbelopp', value: formatSek(dashboard.amountAtRiskSekTotal), tone: 'danger' },
         ]}
@@ -30,8 +37,8 @@ export default function EkonomisktBistandPage() {
       <Card title="SSBTEK/GIF-metadata">
         <p>
           Verifierade inkomster bär källmetadata (SSBTEK/GIF/Skatteverket/Försäkringskassan m.fl.),
-          verifieringsreferens, <em>used_in_decision</em>, rättslig grund, ändamål och exportbarhet —
-          redo för framtida Inera/GIF-anslutning.
+          verifieringsreferens, <em>used_in_decision</em>, rättslig grund, ändamål och exportbarhet
+          — redo för framtida Inera/GIF-anslutning.
         </p>
       </Card>
     </>

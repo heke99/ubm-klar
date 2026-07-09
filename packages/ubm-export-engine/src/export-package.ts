@@ -118,7 +118,8 @@ export async function buildExportPackage(
   };
 }
 
-export type TransportProfile = 'manual_download' | 'sftp' | 'api' | 'ubm_official_transport_pending';
+export type TransportProfile =
+  'manual_download' | 'sftp' | 'api' | 'ubm_official_transport_pending';
 
 export interface SendContext {
   approvalWorkflow: ApprovalWorkflow;

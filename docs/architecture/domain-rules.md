@@ -35,7 +35,7 @@ The resolver rejects forbidden domains even if someone registers them in the con
 ## UI copy
 
 - Product name: **UBM Klar**
-- Tagline: *"UBM Klar hjälper kommunen att strukturera, kvalitetssäkra, kontrollera och förbereda uppgifter inför UBM-processer."*
-- Mandatory disclaimer on every UI surface: *"UBM Klar är en fristående produkt och är inte en tjänst från Utbetalningsmyndigheten eller någon annan myndighet."*
+- Tagline: _"UBM Klar hjälper kommunen att strukturera, kvalitetssäkra, kontrollera och förbereda uppgifter inför UBM-processer."_
+- Mandatory disclaimer on every UI surface: _"UBM Klar är en fristående produkt och är inte en tjänst från Utbetalningsmyndigheten eller någon annan myndighet."_
 - No authority logos, no "myndighet" phrasing about the product itself, no domains or copy
   implying the vendor is Utbetalningsmyndigheten.

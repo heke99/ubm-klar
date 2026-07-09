@@ -16,8 +16,13 @@ export default function TillganglighetPage() {
         <h3>Så här uppfyller tjänsten kraven</h3>
         <ul>
           <li>All funktionalitet kan nås med enbart tangentbord, med synlig fokusmarkering.</li>
-          <li>Sidorna har logisk rubrikstruktur, landmärken och en hopp-länk till huvudinnehållet.</li>
-          <li>Tabeller har rubrikceller och beskrivningar; formulär har etiketter och tydliga felmeddelanden.</li>
+          <li>
+            Sidorna har logisk rubrikstruktur, landmärken och en hopp-länk till huvudinnehållet.
+          </li>
+          <li>
+            Tabeller har rubrikceller och beskrivningar; formulär har etiketter och tydliga
+            felmeddelanden.
+          </li>
           <li>Statusar förmedlas med både färg och text; kontraster uppfyller AA.</li>
           <li>Alla vyer har tydliga laddnings-, tomt-, fel- och behörighetslägen.</li>
           <li>Gränssnittet är på svenska med klarspråk.</li>

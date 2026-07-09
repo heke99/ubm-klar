@@ -6,8 +6,12 @@ export const dynamic = 'force-static';
 /** Juridik och DPO: granskningar, känsliga åtkomster, utlämnanden. */
 export default function JuridikPage() {
   const sensitiveFlags = demo.allFlags.filter((f) =>
-    ['lss_sensitive_document_access_without_reason', 'ea_sensitive_field_reveal_without_reason',
-     'lss_protected_identity_without_elevated_protection', 'ea_protected_household_without_elevated_access'].includes(f.ruleKey),
+    [
+      'lss_sensitive_document_access_without_reason',
+      'ea_sensitive_field_reveal_without_reason',
+      'lss_protected_identity_without_elevated_protection',
+      'ea_protected_household_without_elevated_access',
+    ].includes(f.ruleKey),
   );
   return (
     <>
@@ -15,13 +19,16 @@ export default function JuridikPage() {
       <Card title="Väntar på granskning (demo)">
         <ul>
           <li>
-            Exportförslag UBM-2026-0002 <StatusBadge status="Kräver juridisk granskning" tone="warning" />
+            Exportförslag UBM-2026-0002{' '}
+            <StatusBadge status="Kräver juridisk granskning" tone="warning" />
           </li>
           <li>
-            Exportförslag UBM-2026-0003 <StatusBadge status="Kräver DPO-granskning" tone="warning" />
+            Exportförslag UBM-2026-0003{' '}
+            <StatusBadge status="Kräver DPO-granskning" tone="warning" />
           </li>
           <li>
-            Utlämnandeärende AH-2026-011 <StatusBadge status="Sekretessprövning pågår" tone="info" />
+            Utlämnandeärende AH-2026-011{' '}
+            <StatusBadge status="Sekretessprövning pågår" tone="info" />
           </li>
         </ul>
       </Card>

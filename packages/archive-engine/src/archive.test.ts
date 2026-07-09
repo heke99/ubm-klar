@@ -75,8 +75,18 @@ describe('evaluateRetention', () => {
 
 describe('e-archive packages', () => {
   const entries = [
-    { entityKind: 'ea_decision', entityId: 'd1', content: 'beslut-innehåll-1', metadata: { year: '2026' } },
-    { entityKind: 'ea_decision', entityId: 'd2', content: 'beslut-innehåll-2', metadata: { year: '2026' } },
+    {
+      entityKind: 'ea_decision',
+      entityId: 'd1',
+      content: 'beslut-innehåll-1',
+      metadata: { year: '2026' },
+    },
+    {
+      entityKind: 'ea_decision',
+      entityId: 'd2',
+      content: 'beslut-innehåll-2',
+      metadata: { year: '2026' },
+    },
   ];
 
   it('builds packages with manifests and checksums', () => {

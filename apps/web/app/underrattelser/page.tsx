@@ -5,9 +5,27 @@ export const dynamic = 'force-static';
 /** Underrättelser från UBM: matchning med konfidenspoäng → kontrollärende. */
 export default function UnderrattelserPage() {
   const notifications = [
-    { id: 'UN-2026-001', confidence: 0.95, status: 'Automatiskt matchad', tone: 'success' as const, next: 'Kontrollärende skapat' },
-    { id: 'UN-2026-002', confidence: 0.72, status: 'Manuell granskning', tone: 'warning' as const, next: 'Bekräfta matchning' },
-    { id: 'UN-2026-003', confidence: 0.31, status: 'Ingen matchning', tone: 'danger' as const, next: 'Utred underlag' },
+    {
+      id: 'UN-2026-001',
+      confidence: 0.95,
+      status: 'Automatiskt matchad',
+      tone: 'success' as const,
+      next: 'Kontrollärende skapat',
+    },
+    {
+      id: 'UN-2026-002',
+      confidence: 0.72,
+      status: 'Manuell granskning',
+      tone: 'warning' as const,
+      next: 'Bekräfta matchning',
+    },
+    {
+      id: 'UN-2026-003',
+      confidence: 0.31,
+      status: 'Ingen matchning',
+      tone: 'danger' as const,
+      next: 'Utred underlag',
+    },
   ];
   return (
     <>

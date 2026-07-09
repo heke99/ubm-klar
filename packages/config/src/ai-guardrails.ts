@@ -55,10 +55,7 @@ export interface AiRequestContext {
   involvesSecurityClassified: boolean;
   piiInPromptsAllowed: boolean;
   modelProvider:
-    | 'disabled'
-    | 'municipality_hosted'
-    | 'vendor_hosted_no_pii'
-    | 'vendor_hosted_pii_approved';
+    'disabled' | 'municipality_hosted' | 'vendor_hosted_no_pii' | 'vendor_hosted_pii_approved';
 }
 
 export interface AiGuardrailResult {
@@ -87,7 +84,8 @@ export function checkAiRequest(context: AiRequestContext): AiGuardrailResult {
   if (context.involvesSecurityClassified) {
     flags.push({
       flagKind: 'classification_exceeded',
-      detail: 'Säkerhetsskyddsklassificerat material får inte behandlas av AI utan särskild konfiguration.',
+      detail:
+        'Säkerhetsskyddsklassificerat material får inte behandlas av AI utan särskild konfiguration.',
     });
   }
   if (context.contextClassification >= 2 && !context.piiInPromptsAllowed) {

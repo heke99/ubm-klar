@@ -27,9 +27,7 @@ describe('maker-checker workflows', () => {
         decidedBy: 'maker-user',
         actingRole: 'lawyer',
       }),
-    ).toThrowError(
-      expect.objectContaining({ code: 'maker_cannot_approve' }) as unknown as Error,
-    );
+    ).toThrowError(expect.objectContaining({ code: 'maker_cannot_approve' }) as unknown as Error);
   });
 
   it('lets the maker reject their own workflow (withdrawal)', () => {

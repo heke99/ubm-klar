@@ -33,9 +33,7 @@ function packageInput(overrides: Partial<UbmExportPackageInput> = {}): UbmExport
         payload: { decision_number: 'LSS-1', hours_per_week: '84' },
       },
     ],
-    documents: [
-      { documentId: 'doc1', fileHashSha256: 'abc123', exportMode: 'reference_only' },
-    ],
+    documents: [{ documentId: 'doc1', fileHashSha256: 'abc123', exportMode: 'reference_only' }],
     createdBy: 'maker-1',
     ...overrides,
   };
@@ -108,7 +106,11 @@ describe('assertSendable', () => {
       requiredRoles: ['ubm_export_manager'],
     });
     expect(() =>
-      assertSendable({ approvalWorkflow: wf, transportProfile: 'manual_download', transportApproved: true }),
+      assertSendable({
+        approvalWorkflow: wf,
+        transportProfile: 'manual_download',
+        transportApproved: true,
+      }),
     ).toThrow(ExportNotApprovedError);
   });
 

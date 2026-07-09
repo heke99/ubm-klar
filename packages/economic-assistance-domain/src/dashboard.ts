@@ -21,16 +21,19 @@ export interface EaDashboardData {
   amountAtRiskSekTotal: number;
 }
 
-const RULE_GROUPS: Record<string, keyof Pick<
-  EaDashboardData,
-  | 'incomeAnomalies'
-  | 'householdAnomalies'
-  | 'housingAnomalies'
-  | 'duplicatePayments'
-  | 'accountAnomalies'
-  | 'rejectionWithPayment'
-  | 'paymentFileMismatches'
->> = {
+const RULE_GROUPS: Record<
+  string,
+  keyof Pick<
+    EaDashboardData,
+    | 'incomeAnomalies'
+    | 'householdAnomalies'
+    | 'housingAnomalies'
+    | 'duplicatePayments'
+    | 'accountAnomalies'
+    | 'rejectionWithPayment'
+    | 'paymentFileMismatches'
+  >
+> = {
   ea_income_without_period: 'incomeAnomalies',
   ea_income_verified_after_decision: 'incomeAnomalies',
   ea_income_not_used_in_decision: 'incomeAnomalies',

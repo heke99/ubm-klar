@@ -18,12 +18,23 @@ export default function RapporterPage() {
           <li>DPO-rapport: åtkomster, känsliga visningar, break-glass-sessioner</li>
           <li>Arkivrapport: gallringsstatus, arkivuttag</li>
         </ul>
-        <p>Alla rapporter kan filtreras per period, förvaltning, utförare och allvarlighetsgrad samt exporteras.</p>
+        <p>
+          Alla rapporter kan filtreras per period, förvaltning, utförare och allvarlighetsgrad samt
+          exporteras.
+        </p>
       </Card>
       <Card title="Nyckeltal just nu (demo)">
         <ul>
-          <li>Riskbelopp totalt: {formatSek(demo.lss.dashboard.amountAtRiskSekTotal + demo.ea.dashboard.amountAtRiskSekTotal)}</li>
-          <li>Produktionsberedskap: {readinessScores.find((s) => s.scoreKey === 'production_readiness')?.score} %</li>
+          <li>
+            Riskbelopp totalt:{' '}
+            {formatSek(
+              demo.lss.dashboard.amountAtRiskSekTotal + demo.ea.dashboard.amountAtRiskSekTotal,
+            )}
+          </li>
+          <li>
+            Produktionsberedskap:{' '}
+            {readinessScores.find((s) => s.scoreKey === 'production_readiness')?.score} %
+          </li>
           <li>Riskflaggor: {demo.allFlags.length}</li>
         </ul>
       </Card>

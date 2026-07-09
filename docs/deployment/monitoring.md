@@ -2,12 +2,12 @@
 
 ## Health endpoints
 
-| Component | Endpoint / probe | Content |
-| --- | --- | --- |
-| API | `GET /health` | `{ service: 'api', status, piiSafe: true }` |
-| Control plane | `GET /health` | `{ service: 'control-plane', status, piiSafe: true }` |
-| Worker | `workerHealth()` snapshot | registered vs expected job families, queue depth |
-| Data plane | release smoke tests | table existence, RLS enabled, seeds present |
+| Component     | Endpoint / probe          | Content                                               |
+| ------------- | ------------------------- | ----------------------------------------------------- |
+| API           | `GET /health`             | `{ service: 'api', status, piiSafe: true }`           |
+| Control plane | `GET /health`             | `{ service: 'control-plane', status, piiSafe: true }` |
+| Worker        | `workerHealth()` snapshot | registered vs expected job families, queue depth      |
+| Data plane    | release smoke tests       | table existence, RLS enabled, seeds present           |
 
 All health payloads are no-PII by construction and safe to forward to vendor telemetry.
 

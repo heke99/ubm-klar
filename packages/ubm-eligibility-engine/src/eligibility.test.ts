@@ -65,7 +65,11 @@ describe('UBM eligibility engine', () => {
       involvesProtectedIdentity: true,
     });
     expect(decision.outcomes).toEqual(
-      expect.arrayContaining(['requires_legal_review', 'requires_dpo_review', 'requires_manual_review']),
+      expect.arrayContaining([
+        'requires_legal_review',
+        'requires_dpo_review',
+        'requires_manual_review',
+      ]),
     );
     expect(decision.outcome).not.toBe('send_allowed');
   });

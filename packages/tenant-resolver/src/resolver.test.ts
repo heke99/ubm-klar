@@ -68,9 +68,7 @@ describe('TenantResolver', () => {
     const resolver = new TenantResolver({
       directory: directoryWith([record({ domainVerified: false })]),
     });
-    await expect(resolver.resolve('malmo.ubmklar.se')).rejects.toThrow(
-      UnverifiedTenantDomainError,
-    );
+    await expect(resolver.resolve('malmo.ubmklar.se')).rejects.toThrow(UnverifiedTenantDomainError);
   });
 
   it('normalizes case, ports and trailing dots', async () => {

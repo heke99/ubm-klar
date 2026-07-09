@@ -3,11 +3,7 @@ import type { ModuleId } from '@ubm-klar/shared-types';
 
 /** Commercial plans. Billing never touches citizen data. */
 export type PlanKey =
-  | 'ubm_klar_start'
-  | 'ubm_klar_lss'
-  | 'ubm_klar_eb'
-  | 'ubm_klar_kontroll'
-  | 'ubm_klar_enterprise';
+  'ubm_klar_start' | 'ubm_klar_lss' | 'ubm_klar_eb' | 'ubm_klar_kontroll' | 'ubm_klar_enterprise';
 
 export interface PlanDefinition {
   planKey: PlanKey;
@@ -20,14 +16,30 @@ export const PLAN_CATALOG: PlanDefinition[] = [
   {
     planKey: 'ubm_klar_start',
     nameSv: 'UBM Klar Start',
-    includedModules: ['platform_foundation', 'municipal_data_plane', 'ubm_readiness', 'import_gateway', 'data_quality'],
-    entitlements: ['readiness_assessment', 'import_templates', 'manual_ubm_requests', 'basic_dashboards'],
+    includedModules: [
+      'platform_foundation',
+      'municipal_data_plane',
+      'ubm_readiness',
+      'import_gateway',
+      'data_quality',
+    ],
+    entitlements: [
+      'readiness_assessment',
+      'import_templates',
+      'manual_ubm_requests',
+      'basic_dashboards',
+    ],
   },
   {
     planKey: 'ubm_klar_lss',
     nameSv: 'UBM Klar LSS',
     includedModules: ['lss', 'payment_control', 'document_vault', 'control_cases'],
-    entitlements: ['lss_data_model', 'lss_payment_control', 'provider_checks', 'lss_ubm_export_proposals'],
+    entitlements: [
+      'lss_data_model',
+      'lss_payment_control',
+      'provider_checks',
+      'lss_ubm_export_proposals',
+    ],
   },
   {
     planKey: 'ubm_klar_eb',
@@ -39,19 +51,42 @@ export const PLAN_CATALOG: PlanDefinition[] = [
     planKey: 'ubm_klar_kontroll',
     nameSv: 'UBM Klar Kontroll',
     includedModules: ['payment_control', 'control_cases', 'import_gateway'],
-    entitlements: ['payment_file_import', 'reconciliation', 'risk_rules', 'control_cases', 'recovery_claim_tracking'],
+    entitlements: [
+      'payment_file_import',
+      'reconciliation',
+      'risk_rules',
+      'control_cases',
+      'recovery_claim_tracking',
+    ],
   },
   {
     planKey: 'ubm_klar_enterprise',
     nameSv: 'UBM Klar Enterprise',
     includedModules: [
-      'platform_foundation', 'municipal_data_plane', 'ubm_readiness', 'payment_control', 'lss',
-      'economic_assistance', 'import_gateway', 'document_vault', 'data_quality', 'control_cases',
-      'compliance_legal', 'cybersecurity', 'archive', 'accessibility',
+      'platform_foundation',
+      'municipal_data_plane',
+      'ubm_readiness',
+      'payment_control',
+      'lss',
+      'economic_assistance',
+      'import_gateway',
+      'document_vault',
+      'data_quality',
+      'control_cases',
+      'compliance_legal',
+      'cybersecurity',
+      'archive',
+      'accessibility',
     ],
     entitlements: [
-      'model_b_isolated_data_plane', 'model_c_support', 'sso', 'siem', 'support_jit',
-      'production_readiness_gates', 'exit_export', 'archive_e_archive',
+      'model_b_isolated_data_plane',
+      'model_c_support',
+      'sso',
+      'siem',
+      'support_jit',
+      'production_readiness_gates',
+      'exit_export',
+      'archive_e_archive',
     ],
   },
 ];

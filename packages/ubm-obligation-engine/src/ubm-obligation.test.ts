@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_UBM_PHASES } from '@ubm-klar/legal-source-engine';
-import {
-  matchNotification,
-  scoreCandidate,
-  type MatchCandidate,
-} from './notification-matching';
+import { matchNotification, scoreCandidate, type MatchCandidate } from './notification-matching';
 import {
   InvalidRequestTransitionError,
   transitionRequest,
@@ -45,7 +41,9 @@ describe('validateUbmRequest', () => {
   });
 
   it('requires subject and requested items', () => {
-    const result = validateUbmRequest(validationInput({ hasSubject: false, hasRequestedItems: false }));
+    const result = validateUbmRequest(
+      validationInput({ hasSubject: false, hasRequestedItems: false }),
+    );
     expect(result.errors).toHaveLength(2);
   });
 });
@@ -72,9 +70,7 @@ describe('request status machine', () => {
   });
 
   it('cannot reopen closed requests', () => {
-    expect(() => transitionRequest('closed', 'registered')).toThrow(
-      InvalidRequestTransitionError,
-    );
+    expect(() => transitionRequest('closed', 'registered')).toThrow(InvalidRequestTransitionError);
   });
 });
 
@@ -106,10 +102,7 @@ describe('notification matching', () => {
   });
 
   it('sends weak matches to manual review', () => {
-    const result = matchNotification(
-      { amountSek: 12500, paymentDate: '2026-06-25' },
-      candidates,
-    );
+    const result = matchNotification({ amountSek: 12500, paymentDate: '2026-06-25' }, candidates);
     expect(result.decision).toBe('manual_review');
   });
 
@@ -120,8 +113,18 @@ describe('notification matching', () => {
 
   it('ambiguous top candidates require manual review even at high scores', () => {
     const twins: MatchCandidate[] = [
-      { candidateKind: 'person', candidateId: 'a', personalIdentityNumber: '19811218-9876', decisionNumber: 'X-1' },
-      { candidateKind: 'person', candidateId: 'b', personalIdentityNumber: '19811218-9876', decisionNumber: 'X-1' },
+      {
+        candidateKind: 'person',
+        candidateId: 'a',
+        personalIdentityNumber: '19811218-9876',
+        decisionNumber: 'X-1',
+      },
+      {
+        candidateKind: 'person',
+        candidateId: 'b',
+        personalIdentityNumber: '19811218-9876',
+        decisionNumber: 'X-1',
+      },
     ];
     const result = matchNotification(
       { personalIdentityNumber: '19811218-9876', decisionNumber: 'X-1' },

@@ -1,9 +1,5 @@
 import type { RiskFinding, RiskRuleDefinition } from '@ubm-klar/rule-engine';
-import {
-  periodsOverlap,
-  weeksInPeriod,
-  type LssRuleContext,
-} from './types';
+import { periodsOverlap, weeksInPeriod, type LssRuleContext } from './types';
 
 type LssRule = RiskRuleDefinition<LssRuleContext>;
 
@@ -161,7 +157,10 @@ export const lssRule05InvoiceWithoutApprovedProvider = base(
           explanation: provider
             ? `Utföraren har status "${provider.status}".`
             : 'Utföraren är okänd i utförarregistret.',
-          evidenceReferences: [`provider_invoice:${inv.id}`, `assistance_provider:${inv.providerId}`],
+          evidenceReferences: [
+            `provider_invoice:${inv.id}`,
+            `assistance_provider:${inv.providerId}`,
+          ],
           amountAtRiskSek: inv.totalAmountSek,
           personId: inv.personId,
         },

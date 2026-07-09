@@ -65,7 +65,11 @@ export function evaluateDisclosure(items: RequestItemState[]): DisclosureGateRes
     }
     switch (item.review.decision) {
       case 'release':
-        disclosableItems.push({ requestItemId: item.requestItemId, documentId: item.documentId, mode: 'full' });
+        disclosableItems.push({
+          requestItemId: item.requestItemId,
+          documentId: item.documentId,
+          mode: 'full',
+        });
         break;
       case 'release_redacted':
         if (!item.review.redactionCompleted) {

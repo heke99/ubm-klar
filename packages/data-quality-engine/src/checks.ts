@@ -194,7 +194,11 @@ export const SHARED_DATA_QUALITY_CHECKS: DataQualityCheck[] = [
     appliesTo: (s) => s.context.hasSupportingDocument !== undefined,
     run: (s) =>
       s.context.hasSupportingDocument === false
-        ? finding('missing_supporting_document', 'requires_manual_review', 'Underlag/dokument saknas.')
+        ? finding(
+            'missing_supporting_document',
+            'requires_manual_review',
+            'Underlag/dokument saknas.',
+          )
         : undefined,
   },
   {
@@ -238,7 +242,11 @@ export const SHARED_DATA_QUALITY_CHECKS: DataQualityCheck[] = [
     appliesTo: (s) => s.context.hasLegalBasis !== undefined,
     run: (s) =>
       s.context.hasLegalBasis === false
-        ? finding('missing_legal_basis', 'requires_legal_review', 'Rättslig grund är inte dokumenterad.')
+        ? finding(
+            'missing_legal_basis',
+            'requires_legal_review',
+            'Rättslig grund är inte dokumenterad.',
+          )
         : undefined,
   },
   {

@@ -43,7 +43,13 @@ export default function UbmForfragningarPage() {
                   <td>{index % 2 === 0 ? 'LSS' : 'Ekonomiskt bistånd'}</td>
                   <td>
                     <StatusBadge
-                      status={index % 3 === 0 ? 'Validerad' : index % 3 === 1 ? 'Matchning pågår' : 'Underlag samlas'}
+                      status={
+                        index % 3 === 0
+                          ? 'Validerad'
+                          : index % 3 === 1
+                            ? 'Matchning pågår'
+                            : 'Underlag samlas'
+                      }
                       tone={index % 3 === 0 ? 'success' : 'info'}
                     />
                   </td>

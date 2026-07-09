@@ -8,10 +8,7 @@ import {
   registerOutcome,
   transitionCase,
 } from './control-cases';
-import {
-  InvalidPaymentTransitionError,
-  validatePaymentTransition,
-} from './payment-status';
+import { InvalidPaymentTransitionError, validatePaymentTransition } from './payment-status';
 
 describe('payment status transitions', () => {
   it('allows the happy path created -> paid', () => {
@@ -129,9 +126,7 @@ describe('control cases', () => {
       title: 't',
       severity: 'low',
     });
-    expect(() => transitionCase(controlCase, 'decided', 'u1')).toThrow(
-      InvalidCaseTransitionError,
-    );
+    expect(() => transitionCase(controlCase, 'decided', 'u1')).toThrow(InvalidCaseTransitionError);
   });
 
   it('requires an outcome before closing a decided case', () => {
@@ -146,6 +141,8 @@ describe('control cases', () => {
     controlCase = transitionCase(controlCase, 'investigating', 'i1');
     controlCase = transitionCase(controlCase, 'awaiting_decision', 'i1');
     controlCase = transitionCase(controlCase, 'decided', 'm1');
-    expect(() => transitionCase(controlCase, 'closed', 'm1')).toThrow('without a registered outcome');
+    expect(() => transitionCase(controlCase, 'closed', 'm1')).toThrow(
+      'without a registered outcome',
+    );
   });
 });

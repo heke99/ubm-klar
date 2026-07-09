@@ -10,7 +10,11 @@ import {
   type Subscription,
 } from './billing';
 
-const activeLss: Subscription = { planKey: 'ubm_klar_lss', status: 'active', startsAt: '2026-01-01' };
+const activeLss: Subscription = {
+  planKey: 'ubm_klar_lss',
+  status: 'active',
+  startsAt: '2026-01-01',
+};
 
 describe('plan catalogue', () => {
   it('defines all five packages', () => {
@@ -33,12 +37,10 @@ describe('entitlements and feature gating', () => {
   });
 
   it('ignores cancelled or expired subscriptions', () => {
-    expect(
-      resolveEntitlements([{ ...activeLss, status: 'cancelled' }], '2026-07-07').size,
-    ).toBe(0);
-    expect(
-      resolveEntitlements([{ ...activeLss, endsAt: '2026-06-30' }], '2026-07-07').size,
-    ).toBe(0);
+    expect(resolveEntitlements([{ ...activeLss, status: 'cancelled' }], '2026-07-07').size).toBe(0);
+    expect(resolveEntitlements([{ ...activeLss, endsAt: '2026-06-30' }], '2026-07-07').size).toBe(
+      0,
+    );
   });
 
   it('gates features with explanations', () => {

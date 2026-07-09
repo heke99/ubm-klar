@@ -6,9 +6,16 @@ export const dynamic = 'force-static';
 /** Betalningskontroll: avstämning, dubbletter, mottagarkontroll. */
 export default function BetalningskontrollPage() {
   const paymentFlags = demo.allFlags.filter((f) =>
-    ['lss_duplicate_payment', 'ea_duplicate_payment_household_period', 'lss_payment_file_unknown_recipient',
-     'ea_payment_file_row_without_decision', 'lss_account_changed_near_payment', 'ea_account_changed_near_payment',
-     'lss_payment_despite_recovery_claim', 'ea_payment_despite_recovery_claim'].includes(f.ruleKey),
+    [
+      'lss_duplicate_payment',
+      'ea_duplicate_payment_household_period',
+      'lss_payment_file_unknown_recipient',
+      'ea_payment_file_row_without_decision',
+      'lss_account_changed_near_payment',
+      'ea_account_changed_near_payment',
+      'lss_payment_despite_recovery_claim',
+      'ea_payment_despite_recovery_claim',
+    ].includes(f.ruleKey),
   );
   return (
     <>
@@ -39,7 +46,10 @@ export default function BetalningskontrollPage() {
       <Card title="Senaste betalningsflaggor (demo)">
         {paymentFlags.slice(0, 8).map((flag, i) => (
           <p key={`${flag.ruleKey}-${i}`}>
-            <StatusBadge status={flag.severity} tone={flag.severity === 'critical' ? 'danger' : 'warning'} />{' '}
+            <StatusBadge
+              status={flag.severity}
+              tone={flag.severity === 'critical' ? 'danger' : 'warning'}
+            />{' '}
             {flag.explanation}
           </p>
         ))}

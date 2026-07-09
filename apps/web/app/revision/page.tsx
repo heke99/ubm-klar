@@ -19,8 +19,8 @@ export default function RevisionPage() {
       <Card title="Dataåtkomstlogg">
         <p>
           Varje åtkomst till personuppgifter loggas med vem, vad, när, i vilken roll, i vilket
-          ärende och med vilket skäl. Skäl krävs alltid för medicinska uppgifter, skyddad
-          identitet, barns uppgifter och känsliga fält.
+          ärende och med vilket skäl. Skäl krävs alltid för medicinska uppgifter, skyddad identitet,
+          barns uppgifter och känsliga fält.
         </p>
       </Card>
       <Card title="Beviskedja">

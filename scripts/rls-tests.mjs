@@ -48,11 +48,10 @@ function psqlAsTestUser(sessionSql, querySql) {
   const url = new URL(db);
   url.username = 'rls_test_user';
   url.password = 'rls_test';
-  return execFileSync(
-    'psql',
-    [url.toString(), '-v', 'ON_ERROR_STOP=1', '-X', '-q', '-t', '-A'],
-    { input: `begin;\n${sessionSql}\n${querySql}\nrollback;`, encoding: 'utf8' },
-  ).trim();
+  return execFileSync('psql', [url.toString(), '-v', 'ON_ERROR_STOP=1', '-X', '-q', '-t', '-A'], {
+    input: `begin;\n${sessionSql}\n${querySql}\nrollback;`,
+    encoding: 'utf8',
+  }).trim();
 }
 
 function session(userId, roles, noPii = false) {
@@ -152,7 +151,7 @@ expectCount(
 try {
   psqlAsTestUser(
     session(USER, ['lss_case_worker']),
-    "insert into lss_payments (amount_sek) values (100);",
+    'insert into lss_payments (amount_sek) values (100);',
   );
   console.error('FAIL case worker blocked from writing payments: insert succeeded');
   failed++;

@@ -20,17 +20,17 @@ innan produktionssättning (produktionsgrind `dpia_completed`).
 
 ## 3. Risker och åtgärder
 
-| Risk | Åtgärd i UBM Klar |
-| --- | --- |
+| Risk                                 | Åtgärd i UBM Klar                                                                   |
+| ------------------------------------ | ----------------------------------------------------------------------------------- |
 | Obehörig intern åtkomst (nyfikenhet) | Behovsprövad åtkomst, ärendekoppling, skälkrav, nyfikenhetsdetektering, DPO-rapport |
-| Skyddad identitet röjs | Förhöjd behörighet + skäl + kritisk flagga vid saknat skydd; AI får aldrig behandla |
-| Felaktig UBM-export | Behörighetsmotor, juridisk/DPO-granskning, maker-checker, hash + kvittens |
-| Sammanblandning av kommuner | Isolerad dataplan per kommun (ingen delad produktion) |
-| Leverantörsåtkomst | Support utan PII, JIT-godkännande, tidsgräns, loggning |
-| Dataförlust | Backup per kommun, återläsningstest, exitexport |
+| Skyddad identitet röjs               | Förhöjd behörighet + skäl + kritisk flagga vid saknat skydd; AI får aldrig behandla |
+| Felaktig UBM-export                  | Behörighetsmotor, juridisk/DPO-granskning, maker-checker, hash + kvittens           |
+| Sammanblandning av kommuner          | Isolerad dataplan per kommun (ingen delad produktion)                               |
+| Leverantörsåtkomst                   | Support utan PII, JIT-godkännande, tidsgräns, loggning                              |
+| Dataförlust                          | Backup per kommun, återläsningstest, exitexport                                     |
 
 ## 4. Slutsats och godkännande
 
 - Bedömning: [ ] Behandlingen kan genomföras med angivna åtgärder
-- DPO-yttrande: ______  Datum: ______
-- Beslut (personuppgiftsansvarig): ______  Datum: ______
+- DPO-yttrande: ______ Datum: ______
+- Beslut (personuppgiftsansvarig): ______ Datum: ______

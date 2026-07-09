@@ -9,7 +9,7 @@ policies, API keys and backups.
 1. Create three Supabase projects: `<slug>-test`, `<slug>-stage`, `<slug>-prod`.
 2. Store the service keys in the vendor secret store under
    `DATA_PLANE_SERVICE_KEY__<SLUG>__<ENV>` (one secret per tenant per environment; the
-   control plane stores only *references*).
+   control plane stores only _references_).
 3. Register tenant, domains (`<slug>.ubmklar.se`, `<slug>-test.ubmklar.se`,
    `<slug>-stage.ubmklar.se`) and environments in the control plane; verify domains
    (DNS TXT challenge).

@@ -5,9 +5,27 @@ export const dynamic = 'force-static';
 /** Importer: källsystem, importstatus och valideringsrapporter. */
 export default function ImporterPage() {
   const batches = [
-    { id: 'IMP-1042', kind: 'Betalningsfil (BGMAX)', rows: 1240, status: 'Inläst', tone: 'success' as const },
-    { id: 'IMP-1041', kind: 'LSS-beslut (CSV)', rows: 480, status: 'Delvis inläst', tone: 'warning' as const },
-    { id: 'IMP-1040', kind: 'EB-ansökningar (Excel)', rows: 300, status: 'Avvisad', tone: 'danger' as const },
+    {
+      id: 'IMP-1042',
+      kind: 'Betalningsfil (BGMAX)',
+      rows: 1240,
+      status: 'Inläst',
+      tone: 'success' as const,
+    },
+    {
+      id: 'IMP-1041',
+      kind: 'LSS-beslut (CSV)',
+      rows: 480,
+      status: 'Delvis inläst',
+      tone: 'warning' as const,
+    },
+    {
+      id: 'IMP-1040',
+      kind: 'EB-ansökningar (Excel)',
+      rows: 300,
+      status: 'Avvisad',
+      tone: 'danger' as const,
+    },
   ];
   return (
     <>

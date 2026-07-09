@@ -80,9 +80,7 @@ describe('reconcilePaymentFile', () => {
   });
 
   it('flags rows without any decision', () => {
-    const results = reconcilePaymentFile(
-      input({ rows: [row({ personId: 'person-unknown' })] }),
-    );
+    const results = reconcilePaymentFile(input({ rows: [row({ personId: 'person-unknown' })] }));
     expect(results[0]!.resultKind).toBe('missing_decision');
   });
 

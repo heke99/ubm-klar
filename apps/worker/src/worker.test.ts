@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { createDefaultRegistry } from './handlers';
 import { ALL_JOB_TYPES, workerHealth, type WorkerJob } from './jobs';
-import { ALL_PIPELINES, IMPORT_PIPELINE, nextStep, PAYMENT_PIPELINE, UBM_PIPELINE } from './pipelines';
+import {
+  ALL_PIPELINES,
+  IMPORT_PIPELINE,
+  nextStep,
+  PAYMENT_PIPELINE,
+  UBM_PIPELINE,
+} from './pipelines';
 
 function job(type: WorkerJob['type']): WorkerJob {
   return {

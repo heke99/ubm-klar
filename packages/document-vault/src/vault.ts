@@ -51,9 +51,7 @@ export function validateUpload(request: DocumentUploadRequest): DocumentUploadVa
   const policy = BUCKET_POLICIES[request.bucketKey];
 
   if (!policy.allowedMimeTypes.includes(request.mimeType)) {
-    errors.push(
-      `File type ${request.mimeType} is not allowed in bucket ${request.bucketKey}`,
-    );
+    errors.push(`File type ${request.mimeType} is not allowed in bucket ${request.bucketKey}`);
   }
   if (request.content.byteLength === 0) {
     errors.push('Empty files are not allowed');
@@ -105,7 +103,11 @@ export function evaluateDocumentExport(request: DocumentExportRequest): Document
   const policy = BUCKET_POLICIES[request.bucketKey];
 
   if (request.requestedMode === 'reference_only') {
-    return { allowed: true, effectiveMode: 'reference_only', reasons: ['References are always allowed'] };
+    return {
+      allowed: true,
+      effectiveMode: 'reference_only',
+      reasons: ['References are always allowed'],
+    };
   }
 
   if (policy.exportRequiresApproval && !request.hasApprovedExportApproval) {

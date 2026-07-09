@@ -3,7 +3,8 @@ import type { ParsedTable } from './parsers';
 export interface FieldMapping {
   sourceColumn: string;
   targetField: string;
-  transform?: 'trim' | 'uppercase' | 'lowercase' | 'date_iso' | 'amount_sek' | 'personnummer_normalize';
+  transform?:
+    'trim' | 'uppercase' | 'lowercase' | 'date_iso' | 'amount_sek' | 'personnummer_normalize';
   required: boolean;
 }
 
@@ -41,7 +42,10 @@ export function applyTransform(value: string, transform: FieldMapping['transform
       return `${match[1]}-${match[2]!.padStart(2, '0')}-${match[3]!.padStart(2, '0')}`;
     }
     case 'amount_sek': {
-      const cleaned = value.replace(/[\s\u00a0]/g, '').replace(',', '.').replace(/kr$/i, '');
+      const cleaned = value
+        .replace(/[\s\u00a0]/g, '')
+        .replace(',', '.')
+        .replace(/kr$/i, '');
       return cleaned;
     }
     case 'personnummer_normalize':
@@ -59,7 +63,9 @@ export function applyMapping(table: ParsedTable, template: MappingTemplate): Map
       const raw = sourceRow[mapping.sourceColumn];
       if (raw === undefined || raw === '') {
         if (mapping.required) {
-          errors.push(`Missing required field "${mapping.targetField}" (column "${mapping.sourceColumn}")`);
+          errors.push(
+            `Missing required field "${mapping.targetField}" (column "${mapping.sourceColumn}")`,
+          );
         }
         continue;
       }

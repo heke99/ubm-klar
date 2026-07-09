@@ -162,9 +162,7 @@ export function authorize(
   ];
   if (resource.caseId && !subject.roles.some((r) => needToKnowExemptRoles.includes(r))) {
     if (!subject.assignedCaseIds.includes(resource.caseId)) {
-      return deny(
-        'Need-to-know: subject is not assigned to this case and has no reviewer mandate',
-      );
+      return deny('Need-to-know: subject is not assigned to this case and has no reviewer mandate');
     }
     reasons.push('Case assignment verified (need-to-know)');
   }

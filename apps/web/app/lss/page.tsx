@@ -12,12 +12,26 @@ export default function LssPage() {
       <StatGrid
         stats={[
           { label: 'Beslutade timmar', value: dashboard.decidedHoursTotal.toLocaleString('sv-SE') },
-          { label: 'Rapporterade timmar', value: dashboard.reportedHoursTotal.toLocaleString('sv-SE') },
-          { label: 'Fakturerade timmar', value: dashboard.invoicedHoursTotal.toLocaleString('sv-SE') },
+          {
+            label: 'Rapporterade timmar',
+            value: dashboard.reportedHoursTotal.toLocaleString('sv-SE'),
+          },
+          {
+            label: 'Fakturerade timmar',
+            value: dashboard.invoicedHoursTotal.toLocaleString('sv-SE'),
+          },
           { label: 'Utbetalt belopp', value: formatSek(dashboard.paidAmountSekTotal) },
           { label: 'Beslut med avvikelser', value: dashboard.decisionsWithIssues, tone: 'warning' },
-          { label: 'Utförare utan aktivt IVO-tillstånd', value: dashboard.providersWithoutActivePermit, tone: 'danger' },
-          { label: 'Ogodkända tidrapporter', value: dashboard.unapprovedTimeReports, tone: 'warning' },
+          {
+            label: 'Utförare utan aktivt IVO-tillstånd',
+            value: dashboard.providersWithoutActivePermit,
+            tone: 'danger',
+          },
+          {
+            label: 'Ogodkända tidrapporter',
+            value: dashboard.unapprovedTimeReports,
+            tone: 'warning',
+          },
           { label: 'Öppna återkrav', value: dashboard.openRecoveryClaims, tone: 'warning' },
           { label: 'Riskbelopp', value: formatSek(dashboard.amountAtRiskSekTotal), tone: 'danger' },
         ]}

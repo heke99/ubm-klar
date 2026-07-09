@@ -9,10 +9,18 @@ export default function SakerhetPage() {
       <h1>Säkerhet</h1>
       <Card title="Säkerhets- och integritetsanomalier">
         <ul>
-          <li>Nekade behörighetsförsök i följd — <StatusBadge status="0 öppna" tone="success" /></li>
-          <li>Rolländringar i hög takt — <StatusBadge status="0 öppna" tone="success" /></li>
-          <li>Kontoändringar nära utbetalning — <StatusBadge status="Bevakas" tone="info" /></li>
-          <li>Break-glass utan incidentreferens — <StatusBadge status="0 öppna" tone="success" /></li>
+          <li>
+            Nekade behörighetsförsök i följd — <StatusBadge status="0 öppna" tone="success" />
+          </li>
+          <li>
+            Rolländringar i hög takt — <StatusBadge status="0 öppna" tone="success" />
+          </li>
+          <li>
+            Kontoändringar nära utbetalning — <StatusBadge status="Bevakas" tone="info" />
+          </li>
+          <li>
+            Break-glass utan incidentreferens — <StatusBadge status="0 öppna" tone="success" />
+          </li>
         </ul>
       </Card>
       <Card title="NIS2-beredskap">
@@ -27,8 +35,8 @@ export default function SakerhetPage() {
       </Card>
       <Card title="SIEM-export">
         <p>
-          Tekniska händelser (utan personuppgifter) kan exporteras till kommunens SIEM i
-          JSON Lines/CEF/syslog. Varje händelse passerar no-PII-kontrollen innan export.
+          Tekniska händelser (utan personuppgifter) kan exporteras till kommunens SIEM i JSON
+          Lines/CEF/syslog. Varje händelse passerar no-PII-kontrollen innan export.
         </p>
       </Card>
     </>

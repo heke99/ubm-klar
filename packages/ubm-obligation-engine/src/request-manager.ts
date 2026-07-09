@@ -16,11 +16,7 @@ export type UbmRequestStatus =
   | 'rejected';
 
 export type UbmIntakeChannel =
-  | 'manual_registration'
-  | 'file_upload'
-  | 'api_webhook'
-  | 'email_intake'
-  | 'official_transport';
+  'manual_registration' | 'file_upload' | 'api_webhook' | 'email_intake' | 'official_transport';
 
 /**
  * Intake channels usable today. API/webhook and email intake are placeholders,
@@ -78,7 +74,11 @@ export function validateUbmRequest(input: UbmRequestValidationInput): UbmRequest
     );
   }
   const phase1 = isPhaseActive(
-    { phases: input.phases, featureFlags: input.featureFlags, atDate: input.receivedAt.slice(0, 10) },
+    {
+      phases: input.phases,
+      featureFlags: input.featureFlags,
+      atDate: input.receivedAt.slice(0, 10),
+    },
     'phase_1_request_based_2026',
   );
   if (!phase1.active) {

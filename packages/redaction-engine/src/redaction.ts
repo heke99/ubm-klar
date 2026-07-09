@@ -61,9 +61,7 @@ export function planRedaction(
   text: string,
   rules: RedactionRule[] = [REDACT_PERSONNUMMER, REDACT_BANK_ACCOUNTS],
 ): RedactionPlan {
-  const ranges = rules
-    .flatMap((rule) => rule.findRanges(text))
-    .sort((a, b) => a.start - b.start);
+  const ranges = rules.flatMap((rule) => rule.findRanges(text)).sort((a, b) => a.start - b.start);
   return { documentId, ranges, rulesApplied: rules.map((r) => r.id) };
 }
 

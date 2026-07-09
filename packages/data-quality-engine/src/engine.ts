@@ -73,9 +73,10 @@ export interface DataQualityReport {
 }
 
 export function buildReport(results: DataQualityResult[]): DataQualityReport {
-  const byStatus = Object.fromEntries(
-    Object.keys(STATUS_SEVERITY).map((k) => [k, 0]),
-  ) as Record<DataQualityStatus, number>;
+  const byStatus = Object.fromEntries(Object.keys(STATUS_SEVERITY).map((k) => [k, 0])) as Record<
+    DataQualityStatus,
+    number
+  >;
   const byCheck: Record<string, number> = {};
   for (const result of results) {
     byStatus[result.overallStatus] += 1;

@@ -6,11 +6,11 @@ UBM schema versions, support and updates.
 
 ## Variants
 
-| Variant | Data plane | Storage | Operated by |
-| --- | --- | --- | --- |
-| C1 | Municipality-owned managed Supabase project | Supabase Storage (municipality account) | Municipality (vendor supports) |
-| C2 | Self-hosted Supabase | Self-hosted storage | Municipality |
-| C3 | Plain Postgres | Separate storage (S3/Azure/file share) + vendor backend | Municipality |
+| Variant | Data plane                                  | Storage                                                 | Operated by                    |
+| ------- | ------------------------------------------- | ------------------------------------------------------- | ------------------------------ |
+| C1      | Municipality-owned managed Supabase project | Supabase Storage (municipality account)                 | Municipality (vendor supports) |
+| C2      | Self-hosted Supabase                        | Self-hosted storage                                     | Municipality                   |
+| C3      | Plain Postgres                              | Separate storage (S3/Azure/file share) + vendor backend | Municipality                   |
 
 ## Deployment
 

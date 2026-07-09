@@ -5,7 +5,9 @@ interface TestContext {
   payments: Array<{ id: string; amount: number; hasDecision: boolean }>;
 }
 
-function rule(overrides: Partial<RiskRuleDefinition<TestContext>> = {}): RiskRuleDefinition<TestContext> {
+function rule(
+  overrides: Partial<RiskRuleDefinition<TestContext>> = {},
+): RiskRuleDefinition<TestContext> {
   return {
     ruleKey: 'payment_without_decision',
     version: '1.0.0',

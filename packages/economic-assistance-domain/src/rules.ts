@@ -202,9 +202,7 @@ export const eaRule07MemberMissingFromCalculation = base(
         : undefined;
       const household = decision ? households.get(decision.householdId) : undefined;
       if (!household) return [];
-      const missing = household.memberPersonIds.filter(
-        (m) => !calc.includedPersonIds.includes(m),
-      );
+      const missing = household.memberPersonIds.filter((m) => !calc.includedPersonIds.includes(m));
       if (missing.length === 0) return [];
       return [
         {
@@ -606,8 +604,7 @@ export const eaRule22RecipientChangedAfterDecision = base(
         {
           subjectKind: 'ea_payment',
           subjectId: p.id,
-          explanation:
-            'Utbetalningens konto avviker från kontot som var registrerat vid beslutet.',
+          explanation: 'Utbetalningens konto avviker från kontot som var registrerat vid beslutet.',
           evidenceReferences: [`ea_payment:${p.id}`, `ea_decision:${decision.id}`],
           amountAtRiskSek: p.amountSek,
         },

@@ -7,14 +7,23 @@ export const dynamic = 'force-static';
 export default function OversiktPage() {
   const production = readinessScores.find((s) => s.scoreKey === 'production_readiness');
   const ubm = readinessScores.find((s) => s.scoreKey === 'ubm_readiness');
-  const amountAtRisk = demo.lss.dashboard.amountAtRiskSekTotal + demo.ea.dashboard.amountAtRiskSekTotal;
+  const amountAtRisk =
+    demo.lss.dashboard.amountAtRiskSekTotal + demo.ea.dashboard.amountAtRiskSekTotal;
   return (
     <>
       <h1>Översikt</h1>
       <StatGrid
         stats={[
-          { label: 'UBM-beredskap', value: `${ubm?.score ?? 0} %`, tone: (ubm?.score ?? 0) >= 80 ? 'success' : 'warning' },
-          { label: 'Produktionsberedskap', value: `${production?.score ?? 0} %`, tone: (production?.score ?? 0) >= 80 ? 'success' : 'warning' },
+          {
+            label: 'UBM-beredskap',
+            value: `${ubm?.score ?? 0} %`,
+            tone: (ubm?.score ?? 0) >= 80 ? 'success' : 'warning',
+          },
+          {
+            label: 'Produktionsberedskap',
+            value: `${production?.score ?? 0} %`,
+            tone: (production?.score ?? 0) >= 80 ? 'success' : 'warning',
+          },
           { label: 'Öppna UBM-förfrågningar', value: demo.lss.ubmRequestIds.length },
           { label: 'Riskbelopp', value: formatSek(amountAtRisk), tone: 'danger' },
           { label: 'Öppna återkrav (LSS)', value: demo.lss.dashboard.openRecoveryClaims },

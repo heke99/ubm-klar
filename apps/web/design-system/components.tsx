@@ -23,7 +23,11 @@ export function Card({ title, children }: { title: string; children: ReactNode }
 export function StatGrid({
   stats,
 }: {
-  stats: Array<{ label: string; value: string | number; tone?: 'default' | 'success' | 'warning' | 'danger' }>;
+  stats: Array<{
+    label: string;
+    value: string | number;
+    tone?: 'default' | 'success' | 'warning' | 'danger';
+  }>;
 }) {
   const toneColor = {
     default: 'var(--color-text)',
@@ -100,7 +104,10 @@ export function StatusBadge({
 
 export function EmptyState({ message, action }: { message: string; action?: string }) {
   return (
-    <div role="status" style={{ padding: 'var(--space-4)', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+    <div
+      role="status"
+      style={{ padding: 'var(--space-4)', textAlign: 'center', color: 'var(--color-text-muted)' }}
+    >
       <p style={{ margin: 0 }}>{message}</p>
       {action ? <p style={{ marginTop: 'var(--space-2)' }}>{action}</p> : null}
     </div>
@@ -126,7 +133,11 @@ export function ErrorState({ message }: { message: string }) {
 
 export function LoadingState({ label = 'Laddar innehåll …' }: { label?: string }) {
   return (
-    <div role="status" aria-live="polite" style={{ padding: 'var(--space-4)', color: 'var(--color-text-muted)' }}>
+    <div
+      role="status"
+      aria-live="polite"
+      style={{ padding: 'var(--space-4)', color: 'var(--color-text-muted)' }}
+    >
       {label}
     </div>
   );

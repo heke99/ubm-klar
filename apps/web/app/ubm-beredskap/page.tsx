@@ -12,7 +12,8 @@ export default function UbmBeredskapPage() {
         <StatusBadge status="Aktiv" tone="success" />
         <p>
           Kommunen kan ta emot, registrera, bedöma och besvara förfrågningar från
-          Utbetalningsmyndigheten med granskning, maskning, fyra-ögon-godkännande och kvittenshantering.
+          Utbetalningsmyndigheten med granskning, maskning, fyra-ögon-godkännande och
+          kvittenshantering.
         </p>
       </Card>
       <Card title="Fas 2 – Återkommande rapportering (från 1 juli 2029)">
@@ -29,7 +30,12 @@ export default function UbmBeredskapPage() {
           stats={readinessScores.map((score) => ({
             label: score.scoreKey.replaceAll('_', ' '),
             value: `${score.score} %`,
-            tone: score.score === 100 ? ('success' as const) : score.score >= 60 ? ('warning' as const) : ('danger' as const),
+            tone:
+              score.score === 100
+                ? ('success' as const)
+                : score.score >= 60
+                  ? ('warning' as const)
+                  : ('danger' as const),
           }))}
         />
       </Card>

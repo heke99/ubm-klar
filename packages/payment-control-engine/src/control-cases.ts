@@ -136,7 +136,9 @@ export function assignCase(
   changedBy: string,
 ): ControlCase {
   const transitioned =
-    controlCase.status === 'open' ? transitionCase(controlCase, 'assigned', changedBy) : controlCase;
+    controlCase.status === 'open'
+      ? transitionCase(controlCase, 'assigned', changedBy)
+      : controlCase;
   return { ...transitioned, assignedTo: assignee };
 }
 

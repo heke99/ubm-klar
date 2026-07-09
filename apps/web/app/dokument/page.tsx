@@ -10,8 +10,8 @@ export default function DokumentPage() {
       <Card title="Dokumentvalv">
         <p>
           Dokument lagras krypterat i kommunens egen lagring med metadata, filhash,
-          skadeprogramsskanning och klassificering. Medicinska dokument, skyddad identitet och
-          barns handlingar kräver förhöjd behörighet och skäl vid öppning. All åtkomst loggas.
+          skadeprogramsskanning och klassificering. Medicinska dokument, skyddad identitet och barns
+          handlingar kräver förhöjd behörighet och skäl vid öppning. All åtkomst loggas.
         </p>
         <p>
           Vid UBM-export skickas <strong>dokumentreferenser först</strong>; fullständiga dokument

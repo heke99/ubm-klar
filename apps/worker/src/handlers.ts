@@ -30,11 +30,20 @@ export function createDefaultRegistry(): JobRegistry {
 
   registry.register('rule-engine-jobs', async (job) => {
     // payloadReference points at a prepared rule context snapshot in the data plane.
-    return { jobId: job.id, status: 'succeeded', summary: { rulesLss: ALL_LSS_RULES.length, rulesEa: ALL_EA_RULES.length } };
+    return {
+      jobId: job.id,
+      status: 'succeeded',
+      summary: { rulesLss: ALL_LSS_RULES.length, rulesEa: ALL_EA_RULES.length },
+    };
   });
 
   registry.register('data-quality-jobs', async (job) => {
-    const result = dataQuality.run({ entityKind: 'noop', entityId: job.id, fields: {}, context: {} });
+    const result = dataQuality.run({
+      entityKind: 'noop',
+      entityId: job.id,
+      fields: {},
+      context: {},
+    });
     return { jobId: job.id, status: 'succeeded', summary: { overallStatus: result.overallStatus } };
   });
 
@@ -77,7 +86,11 @@ export function createDefaultRegistry(): JobRegistry {
   registry.register('payment-control-jobs', async (job) => {
     // Turns persisted high/critical flags into control cases (controlCaseFromRiskFlag).
     void controlCaseFromRiskFlag;
-    return { jobId: job.id, status: 'succeeded', summary: { autoCaseSeverities: ['high', 'critical'] } };
+    return {
+      jobId: job.id,
+      status: 'succeeded',
+      summary: { autoCaseSeverities: ['high', 'critical'] },
+    };
   });
 
   for (const type of ALL_JOB_TYPES) {

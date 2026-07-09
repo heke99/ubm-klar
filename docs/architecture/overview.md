@@ -6,9 +6,9 @@ or any other authority.
 
 ## Two UBM phases
 
-| Phase | Effective | Mode |
-| --- | --- | --- |
-| Phase 1 | 1 July 2026 | Request-based: intake, matching, eligibility, review, maker-checker, export package, receipt, evidence chain |
+| Phase   | Effective   | Mode                                                                                                                                                                                                  |
+| ------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Phase 1 | 1 July 2026 | Request-based: intake, matching, eligibility, review, maker-checker, export package, receipt, evidence chain                                                                                          |
 | Phase 2 | 1 July 2029 | Recurring reporting: schedules, periods, dataset definitions, diffs, closure. Feature-flagged (`ubm_recurring_reporting_2029`) until official specifications exist. No final UBM schema is hardcoded. |
 
 ## Planes
@@ -56,9 +56,9 @@ Production is always an isolated data plane per municipality:
   - **C1:** municipality-owned managed Supabase
   - **C2:** self-hosted Supabase
   - **C3:** plain Postgres + separate storage + vendor backend
-  The municipality owns database, storage, keys, audit logs, backups, and UBM export
-  packages. The vendor delivers code, release packages, SQL migrations, rule templates,
-  schema versions, and support.
+    The municipality owns database, storage, keys, audit logs, backups, and UBM export
+    packages. The vendor delivers code, release packages, SQL migrations, rule templates,
+    schema versions, and support.
 
 A shared database is permitted **only** for local development, demo, fake data, and
 non-production prototypes (`local_demo_shared` deployment mode, which can never pass the

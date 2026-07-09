@@ -110,7 +110,11 @@ export function generateEaDemoData(options: EaDemoOptions = {}): EaDemoDataset {
     const application = applications[i % applications.length]!;
     const roll = rng();
     const decisionKind =
-      roll < 0.8 ? ('approval' as const) : roll < 0.9 ? ('partial_approval' as const) : ('rejection' as const);
+      roll < 0.8
+        ? ('approval' as const)
+        : roll < 0.9
+          ? ('partial_approval' as const)
+          : ('rejection' as const);
     return {
       id: `ea-decision-${i + 1}`,
       householdId: application.householdId,

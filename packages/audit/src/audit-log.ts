@@ -60,9 +60,7 @@ export interface AuditSink {
   latestHash(): Promise<string | null>;
 }
 
-export function computeEventHash(
-  event: Omit<AuditEvent, 'eventHash'>,
-): string {
+export function computeEventHash(event: Omit<AuditEvent, 'eventHash'>): string {
   const canonical = JSON.stringify({
     eventKey: event.eventKey,
     actorUserId: event.actorUserId ?? null,

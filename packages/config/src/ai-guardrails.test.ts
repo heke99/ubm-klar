@@ -30,7 +30,13 @@ describe('checkAiRequest', () => {
   });
 
   it('always blocks protected identity contexts', () => {
-    const result = checkAiRequest(context({ involvesProtectedIdentity: true, piiInPromptsAllowed: true, modelProvider: 'municipality_hosted' }));
+    const result = checkAiRequest(
+      context({
+        involvesProtectedIdentity: true,
+        piiInPromptsAllowed: true,
+        modelProvider: 'municipality_hosted',
+      }),
+    );
     expect(result.allowed).toBe(false);
     expect(result.flags[0]!.flagKind).toBe('protected_identity_context');
   });
@@ -46,9 +52,7 @@ describe('checkAiRequest', () => {
   });
 
   it('blocks PII in prompts for vendor-hosted AI without approval', () => {
-    const result = checkAiRequest(
-      context({ prompt: 'Sammanfatta ärendet för 19811218-9876.' }),
-    );
+    const result = checkAiRequest(context({ prompt: 'Sammanfatta ärendet för 19811218-9876.' }));
     expect(result.allowed).toBe(false);
     expect(result.flags[0]!.flagKind).toBe('pii_detected_in_prompt');
   });
@@ -68,7 +72,9 @@ describe('checkAiRequest', () => {
 
 describe('checkAiOutput', () => {
   it('marks all output suggestion-only with mandatory review and sources', () => {
-    const result = checkAiOutput('Förslag: kontrollera fakturaperioden mot beslutet.', ['risk_flag:rf-1']);
+    const result = checkAiOutput('Förslag: kontrollera fakturaperioden mot beslutet.', [
+      'risk_flag:rf-1',
+    ]);
     expect(result.allowed).toBe(true);
     expect(result.marking).toBe('suggestion_only');
     expect(result.requiresHumanReview).toBe(true);

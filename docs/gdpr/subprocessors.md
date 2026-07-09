@@ -1,10 +1,10 @@
 # Underbiträdesförteckning (mall)
 
-| Underbiträde | Tjänst | Behandlingsort | Data | Skyddsåtgärd |
-| --- | --- | --- | --- | --- |
-| [Molnleverantör databas/lagring] | Isolerad dataplan (Modell B) | EU/EES | Kommunens data plane | DPA, EU-region, kryptering |
-| [E-postleverantör] | Tekniska aviseringar | EU/EES | Endast tjänste-e-post, ingen PII | DPA |
-| [SIEM-leverantör, om leverantörsdriven] | Teknisk logg | EU/EES | No-PII tekniska händelser | DPA, no-PII-guard |
+| Underbiträde                            | Tjänst                       | Behandlingsort | Data                             | Skyddsåtgärd               |
+| --------------------------------------- | ---------------------------- | -------------- | -------------------------------- | -------------------------- |
+| [Molnleverantör databas/lagring]        | Isolerad dataplan (Modell B) | EU/EES         | Kommunens data plane             | DPA, EU-region, kryptering |
+| [E-postleverantör]                      | Tekniska aviseringar         | EU/EES         | Endast tjänste-e-post, ingen PII | DPA                        |
+| [SIEM-leverantör, om leverantörsdriven] | Teknisk logg                 | EU/EES         | No-PII tekniska händelser        | DPA, no-PII-guard          |
 
 Regler:
 
