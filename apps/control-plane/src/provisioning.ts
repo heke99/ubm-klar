@@ -73,11 +73,12 @@ export class ProvisioningOrderError extends Error {
 }
 
 export class ProvisioningService {
-  private runs = new Map<string, ProvisioningRun>();
-
   constructor(private readonly store: ControlPlaneStore) {}
 
-  startRun(tenant: ControlPlaneTenant, input: ProvisioningPlanInput): ProvisioningRun {
+  async startRun(
+    tenant: ControlPlaneTenant,
+    input: ProvisioningPlanInput,
+  ): Promise<ProvisioningRun> {
     assertNoPii(input, 'control-plane.provisioning');
     if (
       input.targetEnvironments.includes('prod') &&
@@ -105,27 +106,32 @@ export class ProvisioningService {
     this.markStep(run, 'create_tenant', 'succeeded');
     this.markStep(run, 'choose_deployment_mode', 'succeeded');
     for (const moduleId of input.modules) {
-      this.store.setModule({ tenantId: tenant.id, moduleId, enabled: true });
+      await this.store.setModule({ tenantId: tenant.id, moduleId, enabled: true });
     }
     this.markStep(run, 'choose_modules', 'succeeded');
-    this.runs.set(run.id, run);
+    await this.store.saveProvisioningRun(run);
     return run;
   }
 
-  getRun(runId: string): ProvisioningRun | undefined {
-    return this.runs.get(runId);
+  async getRun(runId: string): Promise<ProvisioningRun | undefined> {
+    return this.store.getProvisioningRun(runId);
   }
 
-  listRuns(tenantId: string): ProvisioningRun[] {
-    return [...this.runs.values()].filter((r) => r.tenantId === tenantId);
+  async listRuns(tenantId: string): Promise<ProvisioningRun[]> {
+    return this.store.listProvisioningRuns(tenantId);
   }
 
   /**
    * Steps are completed by their executors (migration runner, smoke tests, humans for
    * go-live approval) and must be completed strictly in order.
    */
-  completeStep(runId: string, stepId: string, ok: boolean, noteNoPii?: string): ProvisioningRun {
-    const run = this.runs.get(runId);
+  async completeStep(
+    runId: string,
+    stepId: string,
+    ok: boolean,
+    noteNoPii?: string,
+  ): Promise<ProvisioningRun> {
+    const run = await this.store.getProvisioningRun(runId);
     if (!run) throw new ProvisioningNotFoundError(`Unknown provisioning run: ${runId}`);
     if (noteNoPii) assertNoPii({ noteNoPii }, 'control-plane.provisioning.step_note');
 
@@ -154,6 +160,7 @@ export class ProvisioningService {
       run.status = 'succeeded';
       run.finishedAt = new Date().toISOString();
     }
+    await this.store.saveProvisioningRun(run);
     return run;
   }
 

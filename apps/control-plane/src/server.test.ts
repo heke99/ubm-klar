@@ -52,7 +52,7 @@ describe('no-PII boundary', () => {
     const response = await createTenant({ municipalityName: 'Malmö 19811218-9876' });
     expect(response.statusCode).toBe(422);
     expect(response.json().error).toBe('pii_rejected');
-    expect(store.listTenants()).toHaveLength(0);
+    expect(await store.listTenants()).toHaveLength(0);
   });
 
   it('rejects support cases with forbidden field names', async () => {

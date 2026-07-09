@@ -12,50 +12,55 @@ import type {
   TenantReleaseStatus,
   TenantSupportCase,
 } from './types';
+import type { ProvisioningRun } from './provisioning';
 
 /**
  * Control-plane persistence boundary. Every write passes through the no-PII guard,
  * so even a programming error upstream cannot land personal data in the control plane.
  *
- * The in-memory implementation backs unit tests and local development; production
- * deployments use the identical interface backed by the control-plane Postgres
- * schema in apps/control-plane/migrations.
+ * The in-memory implementation backs unit tests and local development only;
+ * production uses PostgresControlPlaneStore against apps/control-plane/migrations
+ * (enforced at startup — see main.ts and @ubm-klar/config).
  */
 export interface ControlPlaneStore {
-  createTenant(input: Omit<ControlPlaneTenant, 'id' | 'createdAt'>): ControlPlaneTenant;
-  getTenant(id: string): ControlPlaneTenant | undefined;
-  getTenantBySlug(slug: string): ControlPlaneTenant | undefined;
-  listTenants(): ControlPlaneTenant[];
-  updateTenantStatus(id: string, status: ControlPlaneTenant['status']): ControlPlaneTenant;
+  createTenant(input: Omit<ControlPlaneTenant, 'id' | 'createdAt'>): Promise<ControlPlaneTenant>;
+  getTenant(id: string): Promise<ControlPlaneTenant | undefined>;
+  getTenantBySlug(slug: string): Promise<ControlPlaneTenant | undefined>;
+  listTenants(): Promise<ControlPlaneTenant[]>;
+  updateTenantStatus(id: string, status: ControlPlaneTenant['status']): Promise<ControlPlaneTenant>;
 
-  addDomain(input: Omit<TenantDomain, 'id'>): TenantDomain;
-  findDomain(domain: string): TenantDomain | undefined;
-  listDomains(tenantId: string): TenantDomain[];
-  verifyDomain(domainId: string): TenantDomain;
+  addDomain(input: Omit<TenantDomain, 'id'>): Promise<TenantDomain>;
+  findDomain(domain: string): Promise<TenantDomain | undefined>;
+  listDomains(tenantId: string): Promise<TenantDomain[]>;
+  verifyDomain(domainId: string): Promise<TenantDomain>;
 
-  upsertEnvironment(input: Omit<TenantEnvironment, 'id'>): TenantEnvironment;
-  listEnvironments(tenantId: string): TenantEnvironment[];
+  upsertEnvironment(input: Omit<TenantEnvironment, 'id'>): Promise<TenantEnvironment>;
+  listEnvironments(tenantId: string): Promise<TenantEnvironment[]>;
 
-  setModule(input: TenantModule): TenantModule;
-  listModules(tenantId: string): TenantModule[];
+  setModule(input: TenantModule): Promise<TenantModule>;
+  listModules(tenantId: string): Promise<TenantModule[]>;
 
-  setAuthProvider(input: TenantAuthProvider): TenantAuthProvider;
-  listAuthProviders(tenantId: string): TenantAuthProvider[];
+  setAuthProvider(input: TenantAuthProvider): Promise<TenantAuthProvider>;
+  listAuthProviders(tenantId: string): Promise<TenantAuthProvider[]>;
 
-  setFeatureFlag(input: TenantFeatureFlag): TenantFeatureFlag;
-  listFeatureFlags(tenantId: string, environment?: string): TenantFeatureFlag[];
+  setFeatureFlag(input: TenantFeatureFlag): Promise<TenantFeatureFlag>;
+  listFeatureFlags(tenantId: string, environment?: string): Promise<TenantFeatureFlag[]>;
 
-  createSupportCase(input: Omit<TenantSupportCase, 'id'>): TenantSupportCase;
-  listSupportCases(tenantId: string): TenantSupportCase[];
+  createSupportCase(input: Omit<TenantSupportCase, 'id'>): Promise<TenantSupportCase>;
+  listSupportCases(tenantId: string): Promise<TenantSupportCase[]>;
 
-  setReadinessGate(input: TenantReadinessGate): TenantReadinessGate;
-  listReadinessGates(tenantId: string): TenantReadinessGate[];
+  setReadinessGate(input: TenantReadinessGate): Promise<TenantReadinessGate>;
+  listReadinessGates(tenantId: string): Promise<TenantReadinessGate[]>;
 
-  recordHealthCheck(input: TenantHealthCheck): TenantHealthCheck;
-  listHealthChecks(tenantId: string): TenantHealthCheck[];
+  recordHealthCheck(input: TenantHealthCheck): Promise<TenantHealthCheck>;
+  listHealthChecks(tenantId: string): Promise<TenantHealthCheck[]>;
 
-  setReleaseStatus(input: TenantReleaseStatus): TenantReleaseStatus;
-  listReleaseStatuses(tenantId: string): TenantReleaseStatus[];
+  setReleaseStatus(input: TenantReleaseStatus): Promise<TenantReleaseStatus>;
+  listReleaseStatuses(tenantId: string): Promise<TenantReleaseStatus[]>;
+
+  saveProvisioningRun(run: ProvisioningRun): Promise<ProvisioningRun>;
+  getProvisioningRun(runId: string): Promise<ProvisioningRun | undefined>;
+  listProvisioningRuns(tenantId: string): Promise<ProvisioningRun[]>;
 }
 
 export class InMemoryControlPlaneStore implements ControlPlaneStore {
@@ -69,10 +74,13 @@ export class InMemoryControlPlaneStore implements ControlPlaneStore {
   private readinessGates = new Map<string, TenantReadinessGate>();
   private healthChecks: TenantHealthCheck[] = [];
   private releaseStatuses = new Map<string, TenantReleaseStatus>();
+  private provisioningRuns = new Map<string, ProvisioningRun>();
 
-  createTenant(input: Omit<ControlPlaneTenant, 'id' | 'createdAt'>): ControlPlaneTenant {
+  async createTenant(
+    input: Omit<ControlPlaneTenant, 'id' | 'createdAt'>,
+  ): Promise<ControlPlaneTenant> {
     assertNoPii(input, 'control-plane.tenants');
-    if (this.getTenantBySlug(input.slug)) {
+    if (await this.getTenantBySlug(input.slug)) {
       throw new Error(`Tenant slug already exists: ${input.slug}`);
     }
     const tenant: ControlPlaneTenant = {
@@ -84,19 +92,22 @@ export class InMemoryControlPlaneStore implements ControlPlaneStore {
     return tenant;
   }
 
-  getTenant(id: string): ControlPlaneTenant | undefined {
+  async getTenant(id: string): Promise<ControlPlaneTenant | undefined> {
     return this.tenants.get(id);
   }
 
-  getTenantBySlug(slug: string): ControlPlaneTenant | undefined {
+  async getTenantBySlug(slug: string): Promise<ControlPlaneTenant | undefined> {
     return [...this.tenants.values()].find((t) => t.slug === slug);
   }
 
-  listTenants(): ControlPlaneTenant[] {
+  async listTenants(): Promise<ControlPlaneTenant[]> {
     return [...this.tenants.values()];
   }
 
-  updateTenantStatus(id: string, status: ControlPlaneTenant['status']): ControlPlaneTenant {
+  async updateTenantStatus(
+    id: string,
+    status: ControlPlaneTenant['status'],
+  ): Promise<ControlPlaneTenant> {
     const tenant = this.tenants.get(id);
     if (!tenant) throw new Error(`Unknown tenant: ${id}`);
     const updated = { ...tenant, status };
@@ -104,24 +115,24 @@ export class InMemoryControlPlaneStore implements ControlPlaneStore {
     return updated;
   }
 
-  addDomain(input: Omit<TenantDomain, 'id'>): TenantDomain {
+  async addDomain(input: Omit<TenantDomain, 'id'>): Promise<TenantDomain> {
     assertNoPii(input, 'control-plane.tenant_domains');
-    const existing = this.findDomain(input.domain);
+    const existing = await this.findDomain(input.domain);
     if (existing) throw new Error(`Domain already registered: ${input.domain}`);
     const domain: TenantDomain = { ...input, id: randomUUID() };
     this.domains.set(domain.id, domain);
     return domain;
   }
 
-  findDomain(domain: string): TenantDomain | undefined {
+  async findDomain(domain: string): Promise<TenantDomain | undefined> {
     return [...this.domains.values()].find((d) => d.domain === domain.toLowerCase());
   }
 
-  listDomains(tenantId: string): TenantDomain[] {
+  async listDomains(tenantId: string): Promise<TenantDomain[]> {
     return [...this.domains.values()].filter((d) => d.tenantId === tenantId);
   }
 
-  verifyDomain(domainId: string): TenantDomain {
+  async verifyDomain(domainId: string): Promise<TenantDomain> {
     const domain = this.domains.get(domainId);
     if (!domain) throw new Error(`Unknown domain id: ${domainId}`);
     const updated = { ...domain, verified: true };
@@ -129,7 +140,7 @@ export class InMemoryControlPlaneStore implements ControlPlaneStore {
     return updated;
   }
 
-  upsertEnvironment(input: Omit<TenantEnvironment, 'id'>): TenantEnvironment {
+  async upsertEnvironment(input: Omit<TenantEnvironment, 'id'>): Promise<TenantEnvironment> {
     assertNoPii(input, 'control-plane.tenant_environments');
     const key = `${input.tenantId}:${input.environment}`;
     const existing = [...this.environments.values()].find(
@@ -140,78 +151,95 @@ export class InMemoryControlPlaneStore implements ControlPlaneStore {
     return env;
   }
 
-  listEnvironments(tenantId: string): TenantEnvironment[] {
+  async listEnvironments(tenantId: string): Promise<TenantEnvironment[]> {
     return [...this.environments.values()].filter((e) => e.tenantId === tenantId);
   }
 
-  setModule(input: TenantModule): TenantModule {
+  async setModule(input: TenantModule): Promise<TenantModule> {
     this.modules.set(`${input.tenantId}:${input.moduleId}`, input);
     return input;
   }
 
-  listModules(tenantId: string): TenantModule[] {
+  async listModules(tenantId: string): Promise<TenantModule[]> {
     return [...this.modules.values()].filter((m) => m.tenantId === tenantId);
   }
 
-  setAuthProvider(input: TenantAuthProvider): TenantAuthProvider {
+  async setAuthProvider(input: TenantAuthProvider): Promise<TenantAuthProvider> {
     assertNoPii(input, 'control-plane.tenant_auth_providers');
     this.authProviders.set(`${input.tenantId}:${input.environment}:${input.providerKind}`, input);
     return input;
   }
 
-  listAuthProviders(tenantId: string): TenantAuthProvider[] {
+  async listAuthProviders(tenantId: string): Promise<TenantAuthProvider[]> {
     return [...this.authProviders.values()].filter((p) => p.tenantId === tenantId);
   }
 
-  setFeatureFlag(input: TenantFeatureFlag): TenantFeatureFlag {
+  async setFeatureFlag(input: TenantFeatureFlag): Promise<TenantFeatureFlag> {
     this.featureFlags.set(`${input.tenantId}:${input.environment}:${input.flagKey}`, input);
     return input;
   }
 
-  listFeatureFlags(tenantId: string, environment?: string): TenantFeatureFlag[] {
+  async listFeatureFlags(tenantId: string, environment?: string): Promise<TenantFeatureFlag[]> {
     return [...this.featureFlags.values()].filter(
       (f) => f.tenantId === tenantId && (!environment || f.environment === environment),
     );
   }
 
-  createSupportCase(input: Omit<TenantSupportCase, 'id'>): TenantSupportCase {
+  async createSupportCase(input: Omit<TenantSupportCase, 'id'>): Promise<TenantSupportCase> {
     assertNoPii(input, 'control-plane.tenant_support_cases');
     const supportCase: TenantSupportCase = { ...input, id: randomUUID() };
     this.supportCases.set(supportCase.id, supportCase);
     return supportCase;
   }
 
-  listSupportCases(tenantId: string): TenantSupportCase[] {
+  async listSupportCases(tenantId: string): Promise<TenantSupportCase[]> {
     return [...this.supportCases.values()].filter((c) => c.tenantId === tenantId);
   }
 
-  setReadinessGate(input: TenantReadinessGate): TenantReadinessGate {
+  async setReadinessGate(input: TenantReadinessGate): Promise<TenantReadinessGate> {
     assertNoPii(input, 'control-plane.tenant_production_readiness');
     this.readinessGates.set(`${input.tenantId}:${input.gateId}`, input);
     return input;
   }
 
-  listReadinessGates(tenantId: string): TenantReadinessGate[] {
+  async listReadinessGates(tenantId: string): Promise<TenantReadinessGate[]> {
     return [...this.readinessGates.values()].filter((g) => g.tenantId === tenantId);
   }
 
-  recordHealthCheck(input: TenantHealthCheck): TenantHealthCheck {
+  async recordHealthCheck(input: TenantHealthCheck): Promise<TenantHealthCheck> {
     assertNoPii(input, 'control-plane.tenant_health_checks');
     this.healthChecks.push(input);
     return input;
   }
 
-  listHealthChecks(tenantId: string): TenantHealthCheck[] {
+  async listHealthChecks(tenantId: string): Promise<TenantHealthCheck[]> {
     return this.healthChecks.filter((h) => h.tenantId === tenantId);
   }
 
-  setReleaseStatus(input: TenantReleaseStatus): TenantReleaseStatus {
+  async setReleaseStatus(input: TenantReleaseStatus): Promise<TenantReleaseStatus> {
     assertNoPii(input, 'control-plane.tenant_release_status');
     this.releaseStatuses.set(`${input.tenantId}:${input.environment}`, input);
     return input;
   }
 
-  listReleaseStatuses(tenantId: string): TenantReleaseStatus[] {
+  async listReleaseStatuses(tenantId: string): Promise<TenantReleaseStatus[]> {
     return [...this.releaseStatuses.values()].filter((r) => r.tenantId === tenantId);
+  }
+
+  async saveProvisioningRun(run: ProvisioningRun): Promise<ProvisioningRun> {
+    assertNoPii(run, 'control-plane.tenant_provisioning_runs');
+    this.provisioningRuns.set(run.id, structuredClone(run));
+    return run;
+  }
+
+  async getProvisioningRun(runId: string): Promise<ProvisioningRun | undefined> {
+    const run = this.provisioningRuns.get(runId);
+    return run ? structuredClone(run) : undefined;
+  }
+
+  async listProvisioningRuns(tenantId: string): Promise<ProvisioningRun[]> {
+    return [...this.provisioningRuns.values()]
+      .filter((r) => r.tenantId === tenantId)
+      .map((r) => structuredClone(r));
   }
 }
