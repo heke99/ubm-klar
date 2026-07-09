@@ -1,6 +1,6 @@
 {
   "release": "1.0.0",
-  "generatedAt": "2026-07-09T17:04:31.257Z",
+  "generatedAt": "2026-07-09T17:38:59.110Z",
   "migrations": [
     {
       "name": "202607070001_core_init.sql",
@@ -137,6 +137,10 @@
     {
       "name": "202607070034_ubm_internal_pilot_schemas.sql",
       "sha256": "7d3f7362e1ea600466e24565dedc0ad2c839b214e400d391d6abebcaa0016a0b"
+    },
+    {
+      "name": "202607070035_rls_documentation_and_hardening.sql",
+      "sha256": "72a11b0d6e5101dd86cd3e40c9956cef88305a36cd40842408b482260634ba26"
     }
   ],
   "controlPlaneMigrations": [

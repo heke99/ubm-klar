@@ -60,6 +60,21 @@
       "name": "maker-checker trigger installed",
       "sql": "select tgname from pg_trigger where tgname = 'approval_steps_maker_checker'",
       "expectContains": "approval_steps_maker_checker"
+    },
+    {
+      "name": "every sensitive table has RLS enabled",
+      "sql": "select count(*)::text from pg_tables where schemaname = 'public' and rowsecurity = false and (tablename like 'lss\\_%' or tablename like 'ea\\_%' or tablename like 'ubm\\_%' or tablename like 'import\\_%' or tablename like 'payment\\_%' or tablename like 'document%' or tablename in ('persons','person_identifiers','audit_events','data_access_events','sensitive_field_reveals','control_cases','risk_flags'))",
+      "expectContains": "0"
+    },
+    {
+      "name": "key sensitive tables have explicit policies",
+      "sql": "select count(distinct tablename)::text from pg_policies where tablename in ('persons','lss_payments','ea_payments','ubm_export_proposals','audit_events','data_access_events')",
+      "expectContains": "6"
+    },
+    {
+      "name": "no sensitive table grants to public/anon",
+      "sql": "select count(*)::text from information_schema.role_table_grants where grantee in ('PUBLIC','anon') and table_name in ('persons','lss_payments','ea_payments','ubm_export_proposals','audit_events')",
+      "expectContains": "0"
     }
   ]
 }

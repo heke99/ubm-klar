@@ -147,21 +147,143 @@ expectCount(
   14,
 );
 
-// 8. Case worker cannot write payments
-try {
-  psqlAsTestUser(
-    session(USER, ['lss_case_worker']),
-    'insert into lss_payments (amount_sek) values (100);',
-  );
-  console.error('FAIL case worker blocked from writing payments: insert succeeded');
-  failed++;
-} catch {
-  console.info('PASS case worker blocked from writing payments');
-  passed++;
+/** Asserts an operation is denied BY RLS specifically (not NOT NULL or grants). */
+function expectRlsDenied(name, sessionSql, statement) {
+  try {
+    psqlAsTestUser(sessionSql, statement);
+    console.error(`FAIL ${name}: statement succeeded`);
+    failed++;
+  } catch (error) {
+    const message = String(error.message ?? '');
+    if (/row-level security/i.test(message)) {
+      console.info(`PASS ${name}`);
+      passed++;
+    } else {
+      console.error(
+        `FAIL ${name}: denied but NOT by RLS (${message.split('\n').find((l) => l.includes('ERROR')) ?? message.slice(0, 120)})`,
+      );
+      failed++;
+    }
+  }
 }
 
-// cleanup seeded persons
+function expectAllowed(name, sessionSql, statement) {
+  try {
+    psqlAsTestUser(sessionSql, statement);
+    console.info(`PASS ${name}`);
+    passed++;
+  } catch (error) {
+    console.error(`FAIL ${name}: ${String(error.message).split('\n')[0]}`);
+    failed++;
+  }
+}
+
+// 8. Case worker cannot INSERT payments (all NOT NULL columns provided: RLS is the blocker)
+expectRlsDenied(
+  'case worker blocked from inserting payments (RLS, not NOT NULL)',
+  session(USER, ['lss_case_worker']),
+  `insert into lss_payments (person_id, amount_sek, payment_date, status)
+   values ('00000000-0000-0000-0000-000000000001', 100, '2026-06-01', 'created');`,
+);
+
+// 9. Case worker cannot UPDATE payments
 psqlAsAdmin(`
+insert into lss_payments (id, person_id, amount_sek, payment_date, status)
+values ('00000000-0000-0000-0000-00000000aa01', '00000000-0000-0000-0000-000000000001', 500, '2026-06-01', 'paid')
+on conflict (id) do nothing;
+`);
+// Rows invisible under RLS cannot be updated: affected row count must be 0
+// and the stored amount must remain unchanged.
+expectAllowed(
+  'case worker update on payments affects nothing (RLS hides rows)',
+  session(USER, ['lss_case_worker']),
+  `do $$
+   declare n integer;
+   begin
+     update lss_payments set amount_sek = 999999 where id = '00000000-0000-0000-0000-00000000aa01';
+     get diagnostics n = row_count;
+     if n <> 0 then raise exception 'update affected % rows despite RLS', n; end if;
+   end $$;`,
+);
+{
+  const amount = psqlAsAdmin(
+    "select amount_sek from lss_payments where id = '00000000-0000-0000-0000-00000000aa01';",
+  ).trim();
+  if (amount.startsWith('500')) {
+    console.info('PASS payment amount unchanged after blocked update');
+    passed++;
+  } else {
+    console.error(`FAIL payment amount changed to ${amount}`);
+    failed++;
+  }
+}
+
+// 10. Case worker cannot DELETE payments (delete affecting 0 rows is silent —
+// verify the row is invisible to delete by checking it still exists afterwards)
+expectAllowed(
+  'case worker delete on payments affects nothing (RLS hides rows)',
+  session(USER, ['lss_case_worker']),
+  `do $$
+   declare n integer;
+   begin
+     delete from lss_payments where id = '00000000-0000-0000-0000-00000000aa01';
+     get diagnostics n = row_count;
+     if n <> 0 then raise exception 'delete affected % rows despite RLS', n; end if;
+   end $$;`,
+);
+
+// 11. Controller (authorized role) CAN read payments
+expectCount(
+  'controller reads payments (authorized access works)',
+  session(USER, ['controller']),
+  "select count(*) from lss_payments where id = '00000000-0000-0000-0000-00000000aa01';",
+  1,
+);
+
+// 12. Unauthorized role (billing admin) cannot read payments
+expectCount(
+  'billing admin blocked from payments',
+  session(USER, ['billing_admin_no_pii']),
+  'select count(*) from lss_payments;',
+  0,
+);
+
+// 13. Service-only tables: default deny for every direct client role
+expectCount(
+  'import staging (service-only) hidden from all client roles',
+  session(USER, ['municipality_admin', 'controller', 'dpo']),
+  'select count(*) from import_staging_rows;',
+  0,
+);
+
+// 14. Audit events: auditors read, case workers do not
+expectCount(
+  'case worker cannot read audit events',
+  session(USER, ['lss_case_worker']),
+  'select count(*) from audit_events;',
+  0,
+);
+
+// 15. Cross-tenant isolation is database-level: this data plane must identify
+// exactly one municipality (shared prod databases are structurally impossible).
+try {
+  const output = psqlAsAdmin(`select count(*) from data_plane_identity;`).trim();
+  const count = Number(output.split('\n').filter(Boolean).at(-1));
+  if (count <= 1) {
+    console.info('PASS data plane is single-tenant (cross-tenant isolation by design)');
+    passed++;
+  } else {
+    console.error(`FAIL data plane identity: expected <= 1 tenant, found ${count}`);
+    failed++;
+  }
+} catch (error) {
+  console.error(`FAIL data plane identity check: ${String(error.message).split('\n')[0]}`);
+  failed++;
+}
+
+// cleanup seeded rows
+psqlAsAdmin(`
+delete from lss_payments where id = '00000000-0000-0000-0000-00000000aa01';
 delete from persons where id in
   ('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002');
 `);

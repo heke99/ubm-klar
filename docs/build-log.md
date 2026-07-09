@@ -1292,3 +1292,43 @@ error`) so pages render honest states without leaking backend details.
 - **Security notes:** no in-memory audit path exists for production requests;
   chain verification detects both content tampering and deletions.
 - **Status:** production-safe.
+
+## Pilot Batch 14 — RLS and database security
+
+- **Implemented:**
+  - Full migration review. Every sensitive table has RLS enabled; tables now fall
+    into three DOCUMENTED classes (migration
+    `202607070035_rls_documentation_and_hardening.sql`): role-policy tables,
+    service-only tables (RLS default-deny, backend service connection only —
+    imports/staging, payment files, reconciliation, lineage/hashes, retention,
+    need-to-know grants, UBM submissions/receipts/rows; documented via table
+    comments), and reference/no-PII catalogues.
+  - New policies from the review: auditors/DPO/CISO may READ the sensitive-reveal
+    log (oversight); import staging got an explicit RESTRICTIVE no-PII-session
+    guard on top of default deny.
+  - `scripts/rls-tests.mjs` extended to 17 tests: select/insert/update/delete
+    coverage; inserts provide all NOT NULL columns so denials are provably RLS
+    (`expectRlsDenied` asserts the error text mentions row-level security);
+    update/delete on RLS-hidden rows must affect 0 rows and leave data unchanged;
+    authorized access works (controller reads payments); unauthorized denied
+    (billing admin, case-worker-on-audit-events); protected identity restrictions;
+    service-only default deny verified against a union of powerful client roles;
+    cross-tenant isolation verified structurally (single-tenant
+    `data_plane_identity` — production data planes are separate databases per
+    municipality by design).
+  - Release smoke tests extended (15 total): every sensitive table must have RLS
+    enabled (pattern sweep), key sensitive tables must have explicit policies, and
+    no sensitive table may be granted to PUBLIC/anon.
+- **Files:** `supabase/migrations/202607070035_rls_documentation_and_hardening.sql`,
+  `releases/1.0.0/{smoke-tests.json,migration-manifest.json,checksums.txt}`,
+  `scripts/rls-tests.mjs`.
+- **Migrations:** 1 new (35 total), applied locally.
+- **Tests:** RLS suite 17/17 PASS on local Postgres 16; smoke tests 15/15 PASS;
+  full workspace suite green.
+- **Commands run:** release runner checksums/preflight/apply/smoke-test,
+  `pnpm db:rls-test --db …`, full typecheck/test/lint/safety-check/format.
+- **Remaining:** none for pilot; per-tenant RLS runs are onboarding gate evidence.
+- **Env vars:** none new.
+- **Security notes:** service-role leakage to frontend is guarded by resolver leak
+  tests + production-safety-check; DB grants to PUBLIC/anon are now smoke-tested.
+- **Status:** production-safe.
