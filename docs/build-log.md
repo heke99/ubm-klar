@@ -1590,3 +1590,35 @@ error`) so pages render honest states without leaking backend details.
 - **Remaining:** none for pilot.
 - **Env vars:** none new.
 - **Status:** production-safe.
+
+## Pilot Batch 22 — Customer pilot mode
+
+- **Implemented:**
+  - Pilot is an explicit tenant state end-to-end: control-plane `tenants.status =
+'pilot'` -> tenant directory -> resolver -> `SafeTenantConfig.tenantStatus` ->
+    web shell pilot banner ("Kundpilotläge — officiell UBM-överföring avstängd,
+    endast manuell export; importera inte fullständiga produktionsdata före
+    PUB/DPIA/grindar") with a link to `/pilot`.
+  - Pilot gate checklist: 18 pilot-scope gates (superset of the required 15 —
+    tenant, domain verified, auth or approved pilot fallback, roles, DPA/PUB or
+    synthetic-data decision, DPIA status, test import, UBM mock request, export
+    dry-run, audit + data access verification, backup/restore (waivable with
+    documented risk), support process, incident contacts, pilot scope approval).
+    `GET /onboarding/approval-status` computes pilot vs production separately;
+    `/pilot` shows live pilot-gate status.
+  - Pilot limitations enforced: the control plane REFUSES enabling
+    `ubm_official_transport` for anyone (422 — no official spec exists) and
+    `ubm_recurring_reporting_2029` for non-live tenants (422); the env-level
+    `UBM_OFFICIAL_TRANSPORT` guard from Batch 2 blocks every runtime; pilot
+    approval on the control plane transitions the tenant to `pilot` status and is
+    audited with approver + reason.
+- **Files:** `apps/control-plane/src/server.ts`,
+  `apps/control-plane/src/admin-auth.test.ts`, `apps/web/app/pilot/page.tsx`.
+- **Migrations:** none new (pilot scopes shipped in 202607070032).
+- **Tests:** control-plane: official-transport flag refused 422; 2029 flag refused
+  for pilot tenants while other flags work; pilot approval flips tenant status to
+  `pilot`. Full suite green.
+- **Commands run:** full typecheck/test/lint/build/safety-check/format.
+- **Remaining:** none.
+- **Env vars:** none new.
+- **Status:** production-safe.

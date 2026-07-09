@@ -1,11 +1,17 @@
 import { Card, StatusBadge } from '../../design-system/components';
+import { apiGet } from '../../lib/api';
 import { requireSession } from '../../lib/require-session';
 
 export const dynamic = 'force-dynamic';
 
+interface ApprovalStatus {
+  pilot: { allowed: boolean; openRequiredGates: string[]; waivedGates: string[] };
+}
+
 /** Pilotläge: vad som ingår, vad som är avstängt och vilka risker som gäller. */
 export default async function PilotPage() {
   await requireSession();
+  const approval = await apiGet<ApprovalStatus>('/onboarding/approval-status');
   return (
     <div style={{ padding: 'var(--space-4)' }}>
       <h1>Kundpilotläge</h1>
@@ -58,6 +64,21 @@ export default async function PilotPage() {
           verifierade revisions- och dataåtkomstloggar samt överenskommen supportprocess. Status
           följs under <a href="/onboarding">Onboarding</a>.
         </p>
+        {approval.kind === 'ok' ? (
+          approval.data.pilot.allowed ? (
+            <StatusBadge status="Alla pilotgrindar klara" tone="success" />
+          ) : (
+            <>
+              <StatusBadge
+                status={`${approval.data.pilot.openRequiredGates.length} pilotgrindar återstår`}
+                tone="warning"
+              />
+              <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
+                Återstår: {approval.data.pilot.openRequiredGates.join(', ')}
+              </p>
+            </>
+          )
+        ) : null}
       </Card>
     </div>
   );

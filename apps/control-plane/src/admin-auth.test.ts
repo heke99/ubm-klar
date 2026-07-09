@@ -111,6 +111,64 @@ describe('approvals and domain verification', () => {
     expect(response.statusCode).toBe(400);
   });
 
+  it('pilot tenants cannot enable official transport or 2029 recurring reporting', async () => {
+    const tenant = await createTenant(app);
+    const auth = { authorization: 'Bearer test-admin-token' };
+
+    const officialTransport = await app.inject({
+      method: 'PUT',
+      url: `/tenants/${tenant.id}/feature-flags`,
+      headers: auth,
+      payload: { environment: 'prod', flagKey: 'ubm_official_transport', enabled: true },
+    });
+    expect(officialTransport.statusCode).toBe(422);
+    expect(officialTransport.json().error).toBe('flag_forbidden');
+
+    const recurring = await app.inject({
+      method: 'PUT',
+      url: `/tenants/${tenant.id}/feature-flags`,
+      headers: auth,
+      payload: { environment: 'prod', flagKey: 'ubm_recurring_reporting_2029', enabled: true },
+    });
+    expect(recurring.statusCode).toBe(422);
+    expect(recurring.json().error).toBe('flag_forbidden_in_pilot');
+
+    // Other flags (e.g. pilot demo data) work.
+    const allowed = await app.inject({
+      method: 'PUT',
+      url: `/tenants/${tenant.id}/feature-flags`,
+      headers: auth,
+      payload: { environment: 'test', flagKey: 'demo_data_enabled', enabled: true },
+    });
+    expect(allowed.statusCode).toBe(200);
+  });
+
+  it('pilot approval marks the tenant as pilot', async () => {
+    const tenant = await createTenant(app);
+    const auth = { authorization: 'Bearer test-admin-token' };
+    await app.inject({
+      method: 'PATCH',
+      url: `/tenants/${tenant.id}/status`,
+      headers: auth,
+      payload: { status: 'onboarding' },
+    });
+    await app.inject({
+      method: 'PUT',
+      url: `/tenants/${tenant.id}/approvals`,
+      headers: auth,
+      payload: {
+        kind: 'pilot',
+        approved: true,
+        approverId: 'ansvarig-1',
+        reason: 'Pilotstart godkänd',
+      },
+    });
+    const status = (
+      await app.inject({ method: 'GET', url: `/tenants/${tenant.id}`, headers: auth })
+    ).json();
+    expect(status.status).toBe('pilot');
+  });
+
   it('production is not allowed until required gates pass', async () => {
     const tenant = await createTenant(app);
     const auth = { authorization: 'Bearer test-admin-token' };

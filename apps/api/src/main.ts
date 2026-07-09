@@ -11,6 +11,7 @@ import {
   type MalwareScanner,
 } from '@ubm-klar/document-vault';
 import { buildApiServer, type ApiAuthOptions } from './server';
+import type { ReadinessCheck } from './readiness';
 import { TenantDataPlanePool } from './data-plane';
 import { ControlPlaneTenantDirectory, type TenantDirectory } from '@ubm-klar/tenant-resolver';
 
@@ -118,8 +119,8 @@ function buildScanner(): MalwareScanner {
   return new DisabledMalwareScanner();
 }
 
-function buildReadinessChecks(): import('./readiness').ReadinessCheck[] {
-  const checks: import('./readiness').ReadinessCheck[] = [];
+function buildReadinessChecks(): ReadinessCheck[] {
+  const checks: ReadinessCheck[] = [];
   if (config.controlPlane.url) {
     checks.push({
       name: 'control_plane',

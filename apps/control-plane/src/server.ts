@@ -441,6 +441,27 @@ export function buildControlPlaneServer(options: ControlPlaneServerOptions): Fas
   }>('/tenants/:tenantId/feature-flags', async (request, reply) => {
     const tenant = await store.getTenant(request.params.tenantId);
     if (!tenant) return reply.status(404).send({ error: 'tenant_not_found' });
+    // Pilot limitations: recurring 2029 reporting and official transport can
+    // never be enabled for pilot tenants (and the transport flag not at all —
+    // no official specification exists).
+    if (request.body.enabled && request.body.flagKey === 'ubm_official_transport') {
+      return reply.status(422).send({
+        error: 'flag_forbidden',
+        message:
+          'Officiell UBM-transport kan inte aktiveras: ingen officiell specifikation eller godkänd transport finns.',
+      });
+    }
+    if (
+      request.body.enabled &&
+      request.body.flagKey === 'ubm_recurring_reporting_2029' &&
+      tenant.status !== 'live'
+    ) {
+      return reply.status(422).send({
+        error: 'flag_forbidden_in_pilot',
+        message:
+          'Återkommande rapportering (2029) kan inte aktiveras för pilottenants — kräver produktionsstatus och officiella specifikationer.',
+      });
+    }
     return store.setFeatureFlag({ tenantId: tenant.id, ...request.body });
   });
 
