@@ -1,1 +1,1 @@
-UNSIGNED release 1.0.0 manifest-sha256=ca84243c2c544317dc037baefadbdbb9d449edb5e307a945941f7efa7396df2a
+UNSIGNED release 1.0.0 manifest-sha256=3cb4446e4a62027513a6d8d5c5cf425a5b8948d54bdd6390c6300bbc23ee8251

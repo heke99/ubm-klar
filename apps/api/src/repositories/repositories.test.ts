@@ -237,6 +237,7 @@ describe.skipIf(!databaseUrl)('data plane repositories', () => {
       descriptionSv: 'Grind för repositorytest',
       required: true,
       gateOrder: 999,
+      scope: 'production',
     });
     await repos.readiness.setEvidence({ gateKey: 'pilot_test_gate', status: 'failed' });
     const blocked = await repos.readiness.goLiveStatus();
@@ -251,5 +252,64 @@ describe.skipIf(!databaseUrl)('data plane repositories', () => {
     });
     const after = await repos.readiness.goLiveStatus();
     expect(after.openRequiredGates).not.toContain('pilot_test_gate');
+  });
+
+  it('pilot and production statuses are computed from separate gate scopes', async () => {
+    const pilotGates = await repos.readiness.listGates('pilot');
+    const productionGates = await repos.readiness.listGates('production');
+    expect(pilotGates.some((g) => g.gateKey === 'pilot_scope_approved')).toBe(true);
+    expect(productionGates.some((g) => g.gateKey === 'go_live_approved')).toBe(true);
+    expect(pilotGates.some((g) => g.gateKey === 'go_live_approved')).toBe(false);
+
+    const pilot = await repos.readiness.pilotStatus();
+    expect(pilot.allowed).toBe(false); // fresh database: pilot gates open
+    expect(pilot.openRequiredGates).toContain('pilot_scope_approved');
+  });
+
+  it('waivers require reason, approver, future expiry and risk level', async () => {
+    await expect(
+      repos.readiness.waiveGate({
+        gateKey: 'backup_tested',
+        reason: '',
+        approverProfileId: profileId,
+        expiresAt: '2099-01-01',
+        riskLevel: 'medium',
+      }),
+    ).rejects.toThrow(/reason/i);
+
+    await expect(
+      repos.readiness.waiveGate({
+        gateKey: 'backup_tested',
+        reason: 'Pilot utan verklig data',
+        approverProfileId: profileId,
+        expiresAt: '2020-01-01',
+        riskLevel: 'medium',
+      }),
+    ).rejects.toThrow(/expiry/i);
+
+    await repos.readiness.waiveGate({
+      gateKey: 'backup_tested',
+      reason: 'Pilot med enbart syntetisk data — backup ej kritisk',
+      approverProfileId: profileId,
+      expiresAt: '2099-01-01',
+      riskLevel: 'medium',
+    });
+    const gates = await repos.readiness.listGates();
+    const gate = gates.find((g) => g.gateKey === 'backup_tested');
+    expect(gate?.status).toBe('waived');
+    expect(gate?.waiverRiskLevel).toBe('medium');
+
+    // A valid waiver satisfies the gate.
+    const pilot = await repos.readiness.pilotStatus();
+    expect(pilot.openRequiredGates).not.toContain('backup_tested');
+  });
+
+  it('expired waivers no longer satisfy gates (fail closed)', async () => {
+    // Bypass validation to simulate a waiver that has since expired.
+    await db.query(
+      `update production_readiness_evidence set waiver_expires_at = '2020-01-01' where gate_key = 'backup_tested'`,
+    );
+    const pilot = await repos.readiness.pilotStatus();
+    expect(pilot.openRequiredGates).toContain('backup_tested');
   });
 });

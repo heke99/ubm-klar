@@ -1,6 +1,6 @@
 {
   "release": "1.0.0",
-  "generatedAt": "2026-07-09T15:21:37.064Z",
+  "generatedAt": "2026-07-09T16:39:46.283Z",
   "migrations": [
     {
       "name": "202607070001_core_init.sql",
@@ -125,6 +125,10 @@
     {
       "name": "202607070031_rls_policies_late.sql",
       "sha256": "5d0071a842eec15e58ea598107c7771bd13ebaa203dbac8c9f8c9e52eec0067e"
+    },
+    {
+      "name": "202607070032_onboarding_pilot_gates.sql",
+      "sha256": "b18a0ced2472ab6dfbf2e88811a8e10d1bc0beb227a43996b44699e097c9f3d0"
     }
   ],
   "controlPlaneMigrations": [

@@ -49,7 +49,7 @@ import {
 import type { DataClass, SafeTenantConfig } from '@ubm-klar/shared-types';
 import { randomUUID } from 'node:crypto';
 import type { TenantDataPlanePool } from './data-plane';
-import { createRepositories, type Repositories } from './repositories';
+import { createRepositories, WaiverValidationError, type Repositories } from './repositories';
 
 /**
  * UBM Klar backend API. All sensitive operations run here, server-side:
@@ -500,6 +500,103 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
       request.repositories.readiness.goLiveStatus(),
     ]);
     return { dataSource: 'data_plane', gates, goLive };
+  });
+
+  // --- Onboarding gates and approvals ----------------------------------------
+  app.get<{ Querystring: { scope?: 'pilot' | 'production' } }>(
+    '/onboarding/gates',
+    async (request, reply) => {
+      if (!requirePermission(request, reply, 'readiness.manage', { kind: 'readiness' })) return;
+      if (!request.repositories) return { dataSource: 'empty', gates: [] };
+      const gates = await request.repositories.readiness.listGates(request.query.scope);
+      return { dataSource: 'data_plane', gates };
+    },
+  );
+
+  app.put<{
+    Params: { gateKey: string };
+    Body: {
+      status: 'not_started' | 'in_progress' | 'passed' | 'failed';
+      evidenceKind?:
+        'test_run' | 'document' | 'attestation' | 'configuration' | 'external_reference';
+      evidenceReference?: string;
+    };
+  }>('/onboarding/gates/:gateKey', async (request, reply) => {
+    if (!requirePermission(request, reply, 'readiness.manage', { kind: 'readiness' })) return;
+    if (!request.repositories) {
+      return reply.status(503).send({ error: 'no_data_plane', message: 'Dataplan saknas.' });
+    }
+    const profileId = await request.repositories.users.ensureUserProfile(request.subject!.userId);
+    await request.repositories.readiness.setEvidence({
+      gateKey: request.params.gateKey,
+      status: request.body.status,
+      ...(request.body.evidenceKind ? { evidenceKind: request.body.evidenceKind } : {}),
+      ...(request.body.evidenceReference
+        ? { evidenceReference: request.body.evidenceReference }
+        : {}),
+      verifiedBy: profileId,
+    });
+    await auditLogger.record({
+      eventKey: 'case.open',
+      actorUserId: request.subject!.userId,
+      action: `readiness_gate_${request.body.status}`,
+      context: { gateKey: request.params.gateKey, correlationId: request.correlationId },
+    });
+    return { gateKey: request.params.gateKey, status: request.body.status };
+  });
+
+  app.post<{
+    Params: { gateKey: string };
+    Body: { reason: string; expiresAt: string; riskLevel: 'low' | 'medium' | 'high' | 'critical' };
+  }>('/onboarding/gates/:gateKey/waiver', async (request, reply) => {
+    if (!requirePermission(request, reply, 'readiness.manage', { kind: 'readiness' })) return;
+    if (!request.repositories) {
+      return reply.status(503).send({ error: 'no_data_plane', message: 'Dataplan saknas.' });
+    }
+    const profileId = await request.repositories.users.ensureUserProfile(request.subject!.userId);
+    try {
+      await request.repositories.readiness.waiveGate({
+        gateKey: request.params.gateKey,
+        reason: request.body.reason,
+        approverProfileId: profileId,
+        expiresAt: request.body.expiresAt,
+        riskLevel: request.body.riskLevel,
+      });
+    } catch (error) {
+      if (error instanceof WaiverValidationError) {
+        return reply.status(422).send({ error: 'waiver_invalid', message: error.message });
+      }
+      throw error;
+    }
+    await auditLogger.record({
+      eventKey: 'case.open',
+      actorUserId: request.subject!.userId,
+      action: 'readiness_gate_waived',
+      reason: request.body.reason,
+      context: {
+        gateKey: request.params.gateKey,
+        riskLevel: request.body.riskLevel,
+        expiresAt: request.body.expiresAt,
+        correlationId: request.correlationId,
+      },
+    });
+    return { gateKey: request.params.gateKey, status: 'waived' };
+  });
+
+  app.get('/onboarding/approval-status', async (request, reply) => {
+    if (!requirePermission(request, reply, 'readiness.manage', { kind: 'readiness' })) return;
+    if (!request.repositories) {
+      return {
+        dataSource: 'empty',
+        pilot: { allowed: false, openRequiredGates: [], waivedGates: [] },
+        production: { allowed: false, openRequiredGates: [], waivedGates: [] },
+      };
+    }
+    const [pilot, production] = await Promise.all([
+      request.repositories.readiness.pilotStatus(),
+      request.repositories.readiness.goLiveStatus(),
+    ]);
+    return { dataSource: 'data_plane', pilot, production };
   });
 
   app.get('/ubm/export-proposals', async (request, reply) => {

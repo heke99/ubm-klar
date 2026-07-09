@@ -1006,3 +1006,37 @@ error`) so pages render honest states without leaking backend details.
 - **Security notes:** frontend can no longer fabricate data: every page shows only
   what the backend authorizes; empty databases show empty states.
 - **Status:** production-safe.
+
+## Pilot Batch 8 — Municipal onboarding and go-live readiness
+
+- **Implemented:** migration `202607070032_onboarding_pilot_gates.sql`: gate `scope`
+  column (pilot/production/both), waiver columns (approver, expiry date, risk level)
+  on evidence, and the full 26-step onboarding checklist seeded (17 new gates merged
+  with the original 14: tenant info, deployment model, domain, auth, roles/groups,
+  DPA/PUB, DPIA, legal basis, retention, document storage, malware scanning, backup,
+  restore test, audit log verification, data access log verification, RLS evidence,
+  import dry-run, UBM mock request, export dry-run, maker-checker test,
+  support/break-glass, accessibility, incident contact/runbook, pilot scope approval,
+  go/no-go approval). Repository: `listGates(scope)`, `waiveGate` (refuses waivers
+  without reason/approver/future expiry/risk level), `pilotStatus()` and
+  `goLiveStatus()` computed from separate scopes; expired waivers stop satisfying
+  gates (fail closed). API: `GET /onboarding/gates`, `PUT /onboarding/gates/:key`
+  (audited), `POST /onboarding/gates/:key/waiver` (validated + audited),
+  `GET /onboarding/approval-status`. Web `/onboarding`: pilot vs production sections,
+  approval status, waiver details with risk level and expiry.
+- **Files:** `supabase/migrations/202607070032_onboarding_pilot_gates.sql`,
+  `releases/1.0.0/*` (regenerated manifest/checksums),
+  `apps/api/src/repositories/readiness-repository.ts`, `apps/api/src/server.ts`,
+  `apps/web/app/onboarding/page.tsx`.
+- **Migrations:** 1 new (32 total). Applied to local Postgres via the release runner.
+- **Tests:** repository tests extended: pilot vs production scope separation, waiver
+  field validation (reason/expiry rejected when missing/past), valid waiver satisfies
+  the gate, expired waiver fails closed. 53 API tests green.
+- **Commands run:** `release-runner checksums/preflight/apply`, full
+  typecheck/test/lint/build/safety-check.
+- **Remaining:** onboarding UI actions (mark gate passed / request waiver forms) are
+  admin flows; the API is complete and the UI shows full state.
+- **Env vars:** none new.
+- **Security notes:** required gates cannot be bypassed except by documented waiver;
+  every gate change and waiver writes an audit event with correlation id.
+- **Status:** production-safe.
