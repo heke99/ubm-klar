@@ -3,22 +3,48 @@
  * UBM Klar migration and release runner.
  *
  * Commands:
- *   preflight   --release <v>            verify manifest, checksums and migration order
+ *   preflight   --release <v>            verify manifest, checksums, order and signature policy
  *   checksums   --release <v>            (re)generate checksums.txt for the release
+ *   sign        --release <v>            sign the manifest with RELEASE_SIGNING_PRIVATE_KEY (ed25519)
+ *   verify-signature --release <v>       verify signature.sig against the manifest
  *   dry-run     --release <v> [--db url] apply all migrations inside a rolled-back tx
  *   apply       --release <v> --db url   apply migrations (expand-migrate-contract, no destructive ops)
  *   smoke-test  --release <v> --db url   run release smoke tests
  *   rollback-plan --release <v>          print the rollback plan
  *
+ * Signature policy (fail closed):
+ *   - local/demo/test environments may run with the UNSIGNED placeholder.
+ *   - stage/prod require a valid ed25519 signature verified with
+ *     RELEASE_SIGNING_PUBLIC_KEY. Unsigned or unverifiable releases are refused.
+ *
  * Status updates (no PII) are POSTed to the control plane when
  * CONTROL_PLANE_URL and TENANT_ID/ENVIRONMENT are set.
  */
-import { createHash } from 'node:crypto';
+import {
+  createHash,
+  createPrivateKey,
+  createPublicKey,
+  sign as edSign,
+  verify as edVerify,
+} from 'node:crypto';
 import { execFileSync, execSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const root = new URL('..', import.meta.url).pathname;
+
+const PRODUCTION_LIKE_ENVIRONMENTS = new Set(['stage', 'prod', 'production']);
+
+function currentEnvironment() {
+  const explicit = (process.env.ENVIRONMENT ?? process.env.APP_ENV ?? '').toLowerCase();
+  if (explicit) return explicit;
+  if ((process.env.NODE_ENV ?? '').toLowerCase() === 'production') return 'prod';
+  return 'local';
+}
+
+function isProductionLike() {
+  return PRODUCTION_LIKE_ENVIRONMENTS.has(currentEnvironment());
+}
 
 function parseArgs(argv) {
   const [command, ...rest] = argv;
@@ -75,6 +101,21 @@ async function postControlPlaneStatus(phase, status, detail) {
   }
 }
 
+function manifestDigest(manifest) {
+  // Deterministic digest of the migration lists (data plane + control plane).
+  return sha256(
+    JSON.stringify({
+      release: manifest.release,
+      migrations: manifest.migrations,
+      controlPlaneMigrations: manifest.controlPlaneMigrations,
+    }),
+  );
+}
+
+function readManifest(version) {
+  return JSON.parse(readFileSync(join(releaseDir(version), 'migration-manifest.json'), 'utf8'));
+}
+
 function checksums(version) {
   const files = migrationFiles();
   const lines = files.map((f) => `${sha256(f.sql)}  supabase/migrations/${f.name}`);
@@ -93,12 +134,121 @@ function checksums(version) {
   };
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
   writeFileSync(join(releaseDir(version), 'checksums.txt'), lines.join('\n') + '\n');
-  // Signature placeholder: production releases are signed with the vendor release key.
+  if (process.env.RELEASE_SIGNING_PRIVATE_KEY) {
+    signRelease(version);
+  } else {
+    // Unsigned placeholder is only valid for local/demo/test. Preflight refuses it
+    // in stage/prod (fail closed).
+    writeFileSync(
+      join(releaseDir(version), 'signature.sig'),
+      `UNSIGNED release ${version} manifest-sha256=${manifestDigest(manifest)}\n`,
+    );
+  }
+  console.info(`checksums + manifest written for release ${version} (${files.length} migrations)`);
+}
+
+function signRelease(version) {
+  const pem = process.env.RELEASE_SIGNING_PRIVATE_KEY;
+  if (!pem) {
+    console.error('RELEASE_SIGNING_PRIVATE_KEY is not set; cannot sign the release.');
+    process.exit(1);
+  }
+  const manifest = readManifest(version);
+  const digest = manifestDigest(manifest);
+  const key = createPrivateKey(
+    pem.includes('BEGIN') ? pem : Buffer.from(pem, 'base64').toString('utf8'),
+  );
+  const signature = edSign(null, Buffer.from(digest, 'utf8'), key).toString('base64');
   writeFileSync(
     join(releaseDir(version), 'signature.sig'),
-    `UNSIGNED release ${version} manifest-sha256=${sha256(JSON.stringify(manifest.migrations))}\n`,
+    `SIGNED release ${version} manifest-sha256=${digest} ed25519=${signature}\n`,
   );
-  console.info(`checksums + manifest written for release ${version} (${files.length} migrations)`);
+  console.info(`release ${version} signed (ed25519, manifest digest ${digest.slice(0, 12)}…)`);
+}
+
+/**
+ * Verifies the release signature. Returns a list of errors (empty when valid for
+ * the current environment). stage/prod fail closed on unsigned or unverifiable
+ * releases; local/demo/test accept the UNSIGNED placeholder when the digest matches.
+ */
+function signatureErrors(version) {
+  const errors = [];
+  const sigPath = join(releaseDir(version), 'signature.sig');
+  if (!existsSync(sigPath)) {
+    errors.push(`missing releases/${version}/signature.sig`);
+    return errors;
+  }
+  const raw = readFileSync(sigPath, 'utf8').trim();
+  const manifest = readManifest(version);
+  const digest = manifestDigest(manifest);
+  const digestMatch = raw.match(/manifest-sha256=([0-9a-f]{64})/);
+  if (!digestMatch) {
+    errors.push('signature.sig has no manifest-sha256 digest');
+    return errors;
+  }
+  if (digestMatch[1] !== digest) {
+    errors.push(
+      'signature.sig digest does not match the current manifest (re-run checksums + sign)',
+    );
+  }
+  if (raw.startsWith('UNSIGNED')) {
+    if (isProductionLike()) {
+      errors.push(
+        `release ${version} is UNSIGNED. stage/prod require a signed release ` +
+          '(set RELEASE_SIGNING_PRIVATE_KEY and run "release-runner sign").',
+      );
+    }
+    return errors;
+  }
+  const sigMatch = raw.match(/ed25519=([A-Za-z0-9+/=]+)/);
+  if (!sigMatch) {
+    errors.push('signature.sig is not UNSIGNED but has no ed25519 signature');
+    return errors;
+  }
+  const publicKeyPem = process.env.RELEASE_SIGNING_PUBLIC_KEY;
+  if (!publicKeyPem) {
+    if (isProductionLike()) {
+      errors.push(
+        'RELEASE_SIGNING_PUBLIC_KEY is not set; cannot verify the release signature in stage/prod.',
+      );
+    } else {
+      console.warn(
+        'signature present but RELEASE_SIGNING_PUBLIC_KEY not set; skipping cryptographic verification (non-production).',
+      );
+    }
+    return errors;
+  }
+  const key = createPublicKey(
+    publicKeyPem.includes('BEGIN')
+      ? publicKeyPem
+      : Buffer.from(publicKeyPem, 'base64').toString('utf8'),
+  );
+  const valid = edVerify(
+    null,
+    Buffer.from(digest, 'utf8'),
+    key,
+    Buffer.from(sigMatch[1], 'base64'),
+  );
+  if (!valid)
+    errors.push(
+      `release ${version} signature verification FAILED (wrong key or tampered manifest)`,
+    );
+  return errors;
+}
+
+function verifySignature(version) {
+  const errors = signatureErrors(version);
+  if (errors.length > 0) {
+    console.error('SIGNATURE VERIFICATION FAILED:');
+    for (const error of errors) console.error(`  - ${error}`);
+    process.exit(1);
+  }
+  const raw = readFileSync(join(releaseDir(version), 'signature.sig'), 'utf8').trim();
+  console.info(
+    raw.startsWith('UNSIGNED')
+      ? `release ${version} is UNSIGNED (allowed in ${currentEnvironment()} only)`
+      : `release ${version} signature valid`,
+  );
 }
 
 function preflight(version) {
@@ -132,6 +282,22 @@ function preflight(version) {
   const names = files.map((f) => f.name);
   const sorted = [...names].sort();
   if (JSON.stringify(names) !== JSON.stringify(sorted)) errors.push('migrations are not ordered');
+  // Deterministic ordering requires unique timestamp prefixes: two files sharing a
+  // prefix sort by the rest of the filename, which is accidental, not intentional.
+  const prefixes = new Map();
+  for (const name of names) {
+    const prefix = name.split('_')[0];
+    if (prefixes.has(prefix)) {
+      errors.push(
+        `duplicate migration timestamp ${prefix}: "${prefixes.get(prefix)}" and "${name}" — ordering is not deterministic`,
+      );
+    } else {
+      prefixes.set(prefix, name);
+    }
+  }
+  if (existsSync(join(dir, 'migration-manifest.json'))) {
+    errors.push(...signatureErrors(version));
+  }
   for (const file of files) {
     for (const pattern of DESTRUCTIVE_PATTERNS) {
       if (pattern.test(file.sql)) {
@@ -146,7 +312,9 @@ function preflight(version) {
     for (const error of errors) console.error(`  - ${error}`);
     process.exit(1);
   }
-  console.info(`preflight passed: ${files.length} migrations, manifest verified, no destructive statements`);
+  console.info(
+    `preflight passed: ${files.length} migrations, manifest verified, no destructive statements`,
+  );
 }
 
 function requireDb(args) {
@@ -192,7 +360,10 @@ function apply(version, args) {
   );
   const appliedRaw = runPsql(db, 'select name from schema_migrations order by name');
   const applied = new Set(
-    appliedRaw.split('\n').map((l) => l.trim()).filter((l) => l.endsWith('.sql')),
+    appliedRaw
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.endsWith('.sql')),
   );
   let count = 0;
   for (const file of migrationFiles()) {
@@ -227,7 +398,11 @@ function smokeTest(version, args) {
       failed++;
     }
   }
-  postControlPlaneStatus('smoke_test', failed === 0 ? 'succeeded' : 'failed', `${tests.tests.length - failed}/${tests.tests.length}`);
+  postControlPlaneStatus(
+    'smoke_test',
+    failed === 0 ? 'succeeded' : 'failed',
+    `${tests.tests.length - failed}/${tests.tests.length}`,
+  );
   if (failed > 0) process.exit(1);
   console.info(`smoke tests passed (${tests.tests.length})`);
 }
@@ -238,6 +413,12 @@ const version = args.release ?? '1.0.0';
 switch (args.command) {
   case 'checksums':
     checksums(version);
+    break;
+  case 'sign':
+    signRelease(version);
+    break;
+  case 'verify-signature':
+    verifySignature(version);
     break;
   case 'preflight':
     preflight(version);
@@ -255,6 +436,8 @@ switch (args.command) {
     execSync(`cat ${join(releaseDir(version), 'rollback-plan.md')}`, { stdio: 'inherit' });
     break;
   default:
-    console.error('unknown command. Use: preflight | checksums | dry-run | apply | smoke-test | rollback-plan');
+    console.error(
+      'unknown command. Use: preflight | checksums | sign | verify-signature | dry-run | apply | smoke-test | rollback-plan',
+    );
     process.exit(1);
 }

@@ -4,7 +4,7 @@ First production release.
 
 ## Included
 
-- Data plane schema (30 migrations): core municipal model, auth/access control, audit and
+- Data plane schema (31 migrations): core municipal model, auth/access control, audit and
   data access logs, document vault, LSS domain + payment control, economic assistance
   domain, UBM schema registry, UBM request/export/notification, RLS policies, seeds
   (roles + rules), support/break-glass, retention/exit export, internal secrecy,
