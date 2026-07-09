@@ -51,6 +51,7 @@ import { randomUUID } from 'node:crypto';
 import type { TenantDataPlanePool } from './data-plane';
 import { createRepositories, WaiverValidationError, type Repositories } from './repositories';
 import { registerImportRoutes } from './import-routes';
+import { registerUbmRoutes } from './ubm-routes';
 
 /**
  * UBM Klar backend API. All sensitive operations run here, server-side:
@@ -635,6 +636,12 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
     requirePermission: (request, reply, permission) =>
       requirePermission(request, reply, permission, { kind: 'import_batch' }),
     demoAllowed: (request) => demoAllowed(request.tenant),
+  });
+
+  registerUbmRoutes(app, {
+    auditLogger,
+    requirePermission: (request, reply, permission) =>
+      requirePermission(request, reply, permission, { kind: 'ubm_request' }),
   });
 
   app.get('/documents', async (request, reply) => {

@@ -1095,3 +1095,55 @@ error`) so pages render honest states without leaking backend details.
 - **Security notes:** demo/test personnummer cannot pollute production tenants;
   import previews log data access; upload capped at 25 MB / 50k rows.
 - **Status:** production-safe.
+
+## Pilot Batch 10 — UBM request handling MVP
+
+- **Implemented:** full manual request workflow over the persistent data plane
+  (`apps/api/src/ubm-routes.ts`):
+  - `POST /ubm/requests` — manual registration with metadata (request number,
+    external reference, received date, deadline, domain, legal basis, requested
+    items); disabled intake channels (api/email/official transport) are refused with
+    an explicit message; audit `ubm.request_registered`.
+  - `POST /ubm/requests/:id/transition` — state machine from
+    `@ubm-klar/ubm-obligation-engine` (received -> registered -> validated ->
+    matching -> data_collection -> eligibility_review -> proposal_created ->
+    in_review -> approved -> exported -> receipt_received -> closed, plus rejected);
+    invalid transitions 409; `validated` requires subject + requested items.
+  - `POST /ubm/requests/:id/subjects` — person matching by personnummer against the
+    data plane with confidence + Swedish match reason; every search writes a
+    `person_search` data access event; manual confirmation endpoint for ambiguous
+    matches.
+  - `POST /ubm/requests/:id/reviews` — legal/DPO reviews (role-gated: `lawyer`/`dpo`)
+    persisted in `ubm_request_reviews` and audited.
+  - `POST /ubm/requests/:id/eligibility` — the 27-question engine now runs on REAL
+    data: relevant-data/decision/payment checks via SQL, protected identity and
+    minors from `persons`, lineage completeness from import staging lineage, legal
+    basis from the request, review completion from recorded reviews, schema/transport
+    from the seeded internal pilot schemas.
+  - `POST /ubm/requests/:id/proposal` — creates the export proposal (draft or
+    `eligibility_blocked` with explanations), collects real decision/payment rows per
+    matched person into `ubm_export_rows`, logs `export_view` data access per person,
+    advances the request state machine.
+  - Migration `202607070034_ubm_internal_pilot_schemas.sql`: internal pilot response
+    schemas (`internal_lss_request`/`internal_ea_request` 1.0.0, transport
+    `manual_download`) — clearly named internal, NOT official UBM formats; official
+    schemas stay `awaiting_official_specification`.
+  - Web: `/ubm-forfragningar/new` (registration form) and `/ubm-forfragningar/[id]`
+    (detail with subject matching, reviews, transitions, proposal creation, blocked
+    explanations) via server actions.
+- **Files:** `apps/api/src/ubm-routes.ts`, `apps/api/src/server.ts`,
+  `supabase/migrations/202607070034_ubm_internal_pilot_schemas.sql`,
+  `releases/1.0.0/*`, `apps/web/app/ubm-forfragningar/{new,[id]}/page.tsx`.
+- **Migrations:** 1 new (34 total), applied locally.
+- **Tests:** 5 UBM workflow tests on live Postgres: full manual flow to a
+  proposal with real rows (decision+payment payloads verified in ubm_export_rows),
+  disabled intake channel refused, legal/DPO reviews recorded with role enforcement
+  (case worker 403), blocked proposal with clear reasons when no data exists,
+  invalid transitions 409. 66 API tests green.
+- **Commands run:** full typecheck/test/lint/build/safety-check/format + release
+  runner for the new migration.
+- **Remaining:** packaging/maker-checker/download/receipt land in Batch 11.
+- **Env vars:** none new.
+- **Security notes:** every step audited; person searches and export-data collection
+  always write data access events; no official transport can be configured.
+- **Status:** production-safe.
