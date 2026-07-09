@@ -36,6 +36,9 @@ export default async function InstallningarPage() {
           <li>SSO-status och MFA-verifiering</li>
           <li>Backup-/återläsningsstatus</li>
           <li>
+            <a href="/installningar/jobb">Bakgrundsjobb och kö</a>
+          </li>
+          <li>
             <a href="/revision">Revision och loggar</a>
           </li>
         </ul>

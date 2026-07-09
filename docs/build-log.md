@@ -1332,3 +1332,54 @@ error`) so pages render honest states without leaking backend details.
 - **Security notes:** service-role leakage to frontend is guarded by resolver leak
   tests + production-safety-check; DB grants to PUBLIC/anon are now smoke-tested.
 - **Status:** production-safe.
+
+## Pilot Batch 15 — Worker queue and background jobs
+
+- **Implemented:**
+  - `@ubm-klar/queue`: `PgQueue` — Postgres-backed persistent queue
+    (`worker_jobs` table; `FOR UPDATE SKIP LOCKED` claims so concurrent workers
+    never double-process; statuses queued/running/succeeded/failed/retrying/
+    dead_letter; retries with exponential backoff until max_attempts, then
+    dead-letter; stats: queue depth, running, failed, dead-letter, succeeded last
+    hour, last success, last error). `InMemoryQueue` for unit tests only
+    (loadAppConfig forbids it in stage/prod).
+  - `@ubm-klar/rule-run`: real data-plane context loaders for the LSS and EA rule
+    sets (`loadLssContext`/`loadEaContext` — decisions with periods/hours,
+    payments, time reports, invoices, providers+IVO permits, protected persons,
+    recovery claims, payment file rows, households/members/incomes) and
+    `runPaymentControlRules(db, domain, {dryRun})` persisting deduplicated risk
+    flags. Shared by the worker and the API.
+  - Worker rewritten (apps/worker): continuous claim/execute loop with graceful
+    shutdown; HTTP `/health` on :3002 (queue depth, failed jobs, dead-letter
+    count, succeeded last hour, last success/error, queue provider); handlers do
+    REAL work against the data plane: import/mapping/validation batch checks,
+    data-quality counts, rule-engine dry-runs (25 rules), payment-control runs
+    that create control cases from high/critical flags, export manifest-hash
+    integrity verification, notification matching progression, onboarding gate
+    evidence (verifies persistent audit/data-access logs and marks those gates
+    passed). Unimplemented types (redaction — done synchronously in the API,
+    reconciliation, reports, archive, retention, SIEM, exit export, provisioning,
+    billing, legal sources) FAIL with errorCode NOT_IMPLEMENTED — passthrough
+    success is gone.
+  - API `GET /admin/jobs` + web `/installningar/jobb`: queue stats, dead-letter
+    and retry visibility with filters.
+- **Files:** `packages/queue/*`, `packages/rule-run/*`, `apps/worker/src/*`,
+  `apps/api/src/server.ts`, `apps/web/app/installningar/jobb/page.tsx`.
+- **Migrations:** queue schema applied idempotently by the worker at startup
+  (service-owned schema, not part of the signed data-plane release).
+- **Tests:** 10 worker tests: all 20 job families registered; NOT_IMPLEMENTED
+  types fail (never fake success); missing data plane fails NO_DATA_PLANE; retry
+  -> dead-letter lifecycle; PgQueue enqueue/claim/complete/fail with SKIP LOCKED
+  double-claim protection against live Postgres; real handlers verified against
+  the data plane (data-quality counts, 25-rule dry run, onboarding gate evidence
+  written). Manual run: worker booted against local Postgres, processed a real
+  data-quality job to success and retried an archive job with NOT_IMPLEMENTED;
+  `/health` reported everything.
+- **Commands run:** full typecheck/test/lint/build/safety-check/format + manual
+  worker run.
+- **Remaining:** import/export flows can enqueue jobs (API currently runs them
+  synchronously; the queue is used for scheduled/async runs).
+- **Env vars:** `WORKER_QUEUE_URL`, `WORKER_PORT`, `DATA_PLANE_DATABASE_URL`.
+- **Security notes:** job summaries pass the no-PII scanner before leaving the
+  worker; production refuses to start without a persistent queue.
+- **Status:** production-safe.

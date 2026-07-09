@@ -227,6 +227,9 @@ importers:
       '@ubm-klar/data-quality-engine':
         specifier: workspace:*
         version: link:../../packages/data-quality-engine
+      '@ubm-klar/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@ubm-klar/economic-assistance-domain':
         specifier: workspace:*
         version: link:../../packages/economic-assistance-domain
@@ -239,6 +242,9 @@ importers:
       '@ubm-klar/payment-control-engine':
         specifier: workspace:*
         version: link:../../packages/payment-control-engine
+      '@ubm-klar/queue':
+        specifier: workspace:*
+        version: link:../../packages/queue
       '@ubm-klar/reconciliation-engine':
         specifier: workspace:*
         version: link:../../packages/reconciliation-engine
@@ -248,6 +254,9 @@ importers:
       '@ubm-klar/rule-engine':
         specifier: workspace:*
         version: link:../../packages/rule-engine
+      '@ubm-klar/rule-run':
+        specifier: workspace:*
+        version: link:../../packages/rule-run
       '@ubm-klar/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
@@ -538,6 +547,16 @@ importers:
         specifier: ^3.2.6
         version: 3.2.7(@types/node@22.20.0)(tsx@4.23.0)
 
+  packages/queue:
+    dependencies:
+      '@ubm-klar/db':
+        specifier: workspace:*
+        version: link:../db
+    devDependencies:
+      vitest:
+        specifier: ^3.2.6
+        version: 3.2.7(@types/node@22.20.0)(tsx@4.23.0)
+
   packages/reconciliation-engine:
     dependencies:
       '@ubm-klar/shared-types':
@@ -569,6 +588,25 @@ importers:
       '@ubm-klar/shared-types':
         specifier: workspace:*
         version: link:../shared-types
+    devDependencies:
+      vitest:
+        specifier: ^3.2.6
+        version: 3.2.7(@types/node@22.20.0)(tsx@4.23.0)
+
+  packages/rule-run:
+    dependencies:
+      '@ubm-klar/db':
+        specifier: workspace:*
+        version: link:../db
+      '@ubm-klar/economic-assistance-domain':
+        specifier: workspace:*
+        version: link:../economic-assistance-domain
+      '@ubm-klar/lss-domain':
+        specifier: workspace:*
+        version: link:../lss-domain
+      '@ubm-klar/rule-engine':
+        specifier: workspace:*
+        version: link:../rule-engine
     devDependencies:
       vitest:
         specifier: ^3.2.6

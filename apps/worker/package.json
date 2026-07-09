@@ -10,6 +10,9 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@ubm-klar/db": "workspace:*",
+    "@ubm-klar/queue": "workspace:*",
+    "@ubm-klar/rule-run": "workspace:*",
     "@ubm-klar/anomaly-detection": "workspace:*",
     "@ubm-klar/config": "workspace:*",
     "@ubm-klar/data-access-log": "workspace:*",

@@ -557,6 +557,70 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
     return { dataSource: 'data_plane', gates, goLive };
   });
 
+  // --- Worker job status (admin) ----------------------------------------------
+  app.get<{ Querystring: { status?: string } }>('/admin/jobs', async (request, reply) => {
+    if (!requirePermission(request, reply, 'support.technical_status.read', { kind: 'support' }))
+      return;
+    if (!request.repositories) return { dataSource: 'empty', jobs: [], stats: null };
+    const exists = await request.repositories.db.query<{ ok: boolean }>(
+      `select exists (select 1 from information_schema.tables where table_name = 'worker_jobs') as ok`,
+    );
+    if (!exists.rows[0]?.ok) {
+      return { dataSource: 'empty', jobs: [], stats: null, message: 'Ingen jobbkö konfigurerad.' };
+    }
+    const statusFilter = request.query.status;
+    const jobs = await request.repositories.db.query<{
+      id: string;
+      type: string;
+      status: string;
+      attempts: number;
+      max_attempts: number;
+      error_code: string | null;
+      last_error: string | null;
+      enqueued_at: Date;
+      finished_at: Date | null;
+    }>(
+      statusFilter
+        ? `select id, type, status, attempts, max_attempts, error_code, last_error, enqueued_at, finished_at
+           from worker_jobs where status = $1 order by enqueued_at desc limit 100`
+        : `select id, type, status, attempts, max_attempts, error_code, last_error, enqueued_at, finished_at
+           from worker_jobs order by enqueued_at desc limit 100`,
+      statusFilter ? [statusFilter] : [],
+    );
+    const stats = await request.repositories.db.query<{
+      queue_depth: string;
+      dead_letter: string;
+      failed: string;
+      succeeded_last_hour: string;
+    }>(
+      `select
+         (select count(*) from worker_jobs where status in ('queued','retrying')) as queue_depth,
+         (select count(*) from worker_jobs where status = 'dead_letter') as dead_letter,
+         (select count(*) from worker_jobs where status in ('failed','retrying')) as failed,
+         (select count(*) from worker_jobs where status = 'succeeded' and finished_at > now() - interval '1 hour') as succeeded_last_hour`,
+    );
+    return {
+      dataSource: 'data_plane',
+      jobs: jobs.rows.map((row) => ({
+        id: row.id,
+        type: row.type,
+        status: row.status,
+        attempts: row.attempts,
+        maxAttempts: row.max_attempts,
+        errorCode: row.error_code,
+        lastError: row.last_error,
+        enqueuedAt: row.enqueued_at.toISOString(),
+        finishedAt: row.finished_at?.toISOString() ?? null,
+      })),
+      stats: {
+        queueDepth: Number(stats.rows[0]?.queue_depth ?? 0),
+        deadLetter: Number(stats.rows[0]?.dead_letter ?? 0),
+        failed: Number(stats.rows[0]?.failed ?? 0),
+        succeededLastHour: Number(stats.rows[0]?.succeeded_last_hour ?? 0),
+      },
+    };
+  });
+
   // --- Onboarding gates and approvals ----------------------------------------
   app.get<{ Querystring: { scope?: 'pilot' | 'production' } }>(
     '/onboarding/gates',
