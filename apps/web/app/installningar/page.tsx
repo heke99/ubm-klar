@@ -1,21 +1,43 @@
 import { Card, StatusBadge } from '../../design-system/components';
-import { goLive, readinessScores } from '../../components/demo-data';
+import { apiGet } from '../../lib/api';
+import { requireSession } from '../../lib/require-session';
+import { ApiStateGuard, NoDataYet } from '../../components/page-states';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
-/** Inställningar (admin): integrationer, roller, SSO, beredskap. Ej för handläggare. */
-export default function InstallningarPage() {
+interface ReadinessResponse {
+  dataSource: string;
+  gates: Array<{
+    gateKey: string;
+    titleSv: string;
+    required: boolean;
+    status: string;
+  }>;
+  goLive?: { allowed: boolean; openRequiredGates: string[] };
+}
+
+/** Inställningar (admin): roller, SSO, beredskap. Ej för handläggare. */
+export default async function InstallningarPage() {
+  await requireSession();
+  const readiness = await apiGet<ReadinessResponse>('/ubm/readiness');
+
   return (
-    <>
+    <div style={{ padding: 'var(--space-4)' }}>
       <h1>Inställningar</h1>
       <Card title="Administration">
         <ul>
-          <li>Användare och roller (mappning från Entra ID/SAML/OIDC-grupper)</li>
-          <li>Integrationer och importmappningar</li>
+          <li>
+            <a href="/onboarding">Onboarding och beredskapsgrindar</a>
+          </li>
+          <li>Användare och roller (mappning från Entra ID/OIDC-grupper)</li>
+          <li>
+            <a href="/importer">Integrationer och importmappningar</a>
+          </li>
           <li>SSO-status och MFA-verifiering</li>
           <li>Backup-/återläsningsstatus</li>
-          <li>Miljöstatus (test/stage/prod)</li>
-          <li>Informationsklassning och maskeringsregler</li>
+          <li>
+            <a href="/revision">Revision och loggar</a>
+          </li>
         </ul>
         <p>
           Infrastrukturinställningar, fakturering och driftsättning hanteras av leverantörens
@@ -23,31 +45,47 @@ export default function InstallningarPage() {
         </p>
       </Card>
       <Card title="Produktionsberedskap">
-        <ul>
-          {readinessScores.map((score) => (
-            <li key={score.scoreKey}>
-              {score.scoreKey.replaceAll('_', ' ')}: {score.score} %{' '}
-              {score.score === 100 ? (
-                <StatusBadge status="Klar" tone="success" />
-              ) : (
-                <StatusBadge
-                  status={`${score.completedRequired}/${score.totalRequired} steg`}
-                  tone="warning"
-                />
-              )}
-            </li>
-          ))}
-        </ul>
-        <p>
-          Go-live:{' '}
-          {goLive.ready ? (
-            <StatusBadge status="Tillåten" tone="success" />
+        <ApiStateGuard result={readiness} />
+        {readiness.kind === 'ok' ? (
+          readiness.data.gates.length === 0 ? (
+            <NoDataYet what="inga beredskapsgrindar" />
           ) : (
-            <StatusBadge status="Blockerad" tone="danger" />
-          )}{' '}
-          {goLive.reason}
-        </p>
+            <>
+              <p>
+                Go-live:{' '}
+                {readiness.data.goLive?.allowed ? (
+                  <StatusBadge status="Tillåten" tone="success" />
+                ) : (
+                  <StatusBadge
+                    status={`Blockerad — ${readiness.data.goLive?.openRequiredGates.length ?? '?'} obligatoriska grindar återstår`}
+                    tone="warning"
+                  />
+                )}
+              </p>
+              <ul>
+                {readiness.data.gates.map((gate) => (
+                  <li key={gate.gateKey}>
+                    {gate.titleSv}{' '}
+                    <StatusBadge
+                      status={gate.status}
+                      tone={
+                        gate.status === 'passed'
+                          ? 'success'
+                          : gate.status === 'waived'
+                            ? 'warning'
+                            : gate.status === 'failed'
+                              ? 'danger'
+                              : 'info'
+                      }
+                    />
+                    {gate.required ? '' : ' (frivillig)'}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )
+        ) : null}
       </Card>
-    </>
+    </div>
   );
 }

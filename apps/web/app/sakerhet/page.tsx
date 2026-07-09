@@ -1,6 +1,6 @@
 import { Card, StatusBadge } from '../../design-system/components';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
 /** Säkerhet: anomalier, incidenter, NIS2-beredskap, SIEM. */
 export default function SakerhetPage() {

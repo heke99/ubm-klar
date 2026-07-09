@@ -1,70 +1,104 @@
 import { Card, StatusBadge } from '../../design-system/components';
+import { apiGet } from '../../lib/api';
+import { requireSession } from '../../lib/require-session';
+import { ApiStateGuard, NoDataYet } from '../../components/page-states';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
-/** Underrättelser från UBM: matchning med konfidenspoäng → kontrollärende. */
-export default function UnderrattelserPage() {
-  const notifications = [
-    {
-      id: 'UN-2026-001',
-      confidence: 0.95,
-      status: 'Automatiskt matchad',
-      tone: 'success' as const,
-      next: 'Kontrollärende skapat',
-    },
-    {
-      id: 'UN-2026-002',
-      confidence: 0.72,
-      status: 'Manuell granskning',
-      tone: 'warning' as const,
-      next: 'Bekräfta matchning',
-    },
-    {
-      id: 'UN-2026-003',
-      confidence: 0.31,
-      status: 'Ingen matchning',
-      tone: 'danger' as const,
-      next: 'Utred underlag',
-    },
-  ];
+interface NotificationsResponse {
+  dataSource: string;
+  notifications: Array<{
+    id: string;
+    notificationNumber: string;
+    domain: string | undefined;
+    summary: string;
+    status: string;
+    receivedAt: string;
+  }>;
+  counts: Record<string, number>;
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  received: 'Mottagen',
+  matching: 'Matchning pågår',
+  manual_review: 'Manuell granskning',
+  matched: 'Matchad',
+  case_created: 'Kontrollärende skapat',
+  investigating: 'Utreds',
+  outcome_registered: 'Utfall registrerat',
+  feedback_sent: 'Återkoppling skickad',
+  closed: 'Avslutad',
+};
+
+export default async function UnderrattelserPage() {
+  await requireSession();
+  const result = await apiGet<NotificationsResponse>('/ubm/notifications');
+
   return (
-    <>
+    <div style={{ padding: 'var(--space-4)' }}>
       <h1>Underrättelser</h1>
-      <Card title="Inkomna underrättelser (demo)">
-        <table>
-          <caption>Underrättelser från Utbetalningsmyndigheten</caption>
-          <thead>
-            <tr>
-              <th scope="col">Underrättelse</th>
-              <th scope="col">Konfidens</th>
-              <th scope="col">Status</th>
-              <th scope="col">Nästa steg</th>
-            </tr>
-          </thead>
-          <tbody>
-            {notifications.map((n) => (
-              <tr key={n.id}>
-                <td>{n.id}</td>
-                <td>{Math.round(n.confidence * 100)} %</td>
-                <td>
-                  <StatusBadge status={n.status} tone={n.tone} />
-                </td>
-                <td>{n.next}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
-      <Card title="Utfall som återrapporteras">
-        <ul>
-          <li>Återkrav initierat</li>
-          <li>Utbetalning stoppad</li>
-          <li>Ingen åtgärd</li>
-          <li>Polisanmälan</li>
-          <li>Källdata rättad</li>
-          <li>Annan åtgärd</li>
-        </ul>
-      </Card>
-    </>
+      <p>
+        Inkommande underrättelser från Utbetalningsmyndigheten registreras manuellt tills officiell
+        digital kanal finns. Matchning mot personer, ärenden och utbetalningar loggas alltid.
+      </p>
+      <p>
+        <a
+          href="/underrattelser/new"
+          style={{
+            display: 'inline-block',
+            background: 'var(--color-primary)',
+            color: 'var(--color-primary-contrast)',
+            padding: 'var(--space-2) var(--space-3)',
+            borderRadius: 'var(--radius)',
+            textDecoration: 'none',
+          }}
+        >
+          Registrera underrättelse
+        </a>
+      </p>
+      <ApiStateGuard result={result} />
+      {result.kind === 'ok' ? (
+        result.data.notifications.length === 0 ? (
+          <NoDataYet what="inga underrättelser" />
+        ) : (
+          <Card title={`Underrättelser (${result.data.notifications.length})`}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--color-border)' }}>
+                  <th style={{ padding: 'var(--space-2)' }}>Nummer</th>
+                  <th style={{ padding: 'var(--space-2)' }}>Sammanfattning</th>
+                  <th style={{ padding: 'var(--space-2)' }}>Mottagen</th>
+                  <th style={{ padding: 'var(--space-2)' }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {result.data.notifications.map((notification) => (
+                  <tr
+                    key={notification.id}
+                    style={{ borderBottom: '1px solid var(--color-border)' }}
+                  >
+                    <td style={{ padding: 'var(--space-2)' }}>
+                      <a href={`/underrattelser/${notification.id}`}>
+                        {notification.notificationNumber}
+                      </a>
+                    </td>
+                    <td style={{ padding: 'var(--space-2)' }}>{notification.summary}</td>
+                    <td style={{ padding: 'var(--space-2)' }}>
+                      {notification.receivedAt.slice(0, 10)}
+                    </td>
+                    <td style={{ padding: 'var(--space-2)' }}>
+                      <StatusBadge
+                        status={STATUS_LABELS[notification.status] ?? notification.status}
+                        tone={notification.status === 'closed' ? 'success' : 'info'}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        )
+      ) : null}
+    </div>
   );
 }

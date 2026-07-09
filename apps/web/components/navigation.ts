@@ -160,24 +160,3 @@ export const NAV_AREAS: NavArea[] = [
 export function navForRoles(roles: RoleId[]): NavArea[] {
   return NAV_AREAS.filter((area) => area.roles.some((r) => roles.includes(r)));
 }
-
-/**
- * Demo role used for local rendering. In production the roles come from the
- * verified SSO session; navigation is a convenience only — the backend and RLS
- * authorize every request regardless of what the frontend shows.
- */
-export const DEMO_ROLES: RoleId[] = [
-  'social_services_manager',
-  'municipality_admin',
-  'ubm_export_manager',
-  'controller',
-  'lawyer',
-  'dpo',
-  'information_security_officer',
-  'internal_auditor',
-  'lss_case_worker',
-  'economic_assistance_case_worker',
-  'control_investigator',
-  'finance_officer',
-  'system_owner',
-];

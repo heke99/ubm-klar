@@ -67,3 +67,10 @@ export async function readSessionToken(token: string, secret: string): Promise<S
 }
 
 export const SESSION_COOKIE_NAME = 'ubm_klar_session';
+
+/**
+ * Development-only fallback secret so web and API agree without configuration.
+ * loadAppConfig requires a real SESSION_SECRET in stage/prod, so this value can
+ * never be used there.
+ */
+export const LOCAL_DEV_SESSION_SECRET = 'local-dev-session-secret-32-chars!!';

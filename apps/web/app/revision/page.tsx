@@ -1,35 +1,157 @@
 import { Card } from '../../design-system/components';
+import { apiGet } from '../../lib/api';
+import { requireSession } from '../../lib/require-session';
+import { ApiStateGuard, NoDataYet } from '../../components/page-states';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
-/** Revision och loggar: hash-kedjad revisionslogg och dataåtkomstlogg. */
-export default function RevisionPage() {
+interface AuditResponse {
+  dataSource: string;
+  events: Array<{
+    id: string;
+    eventKey: string;
+    action: string;
+    outcome: string;
+    actorUserId: string | undefined;
+    correlationId: string | undefined;
+    occurredAt: string;
+  }>;
+}
+
+interface DataAccessResponse {
+  dataSource: string;
+  events: Array<{
+    id: string;
+    accessKind: string;
+    actorUserId: string;
+    reason: string | undefined;
+    sessionKind: string;
+    occurredAt: string;
+  }>;
+}
+
+export default async function RevisionPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string; to?: string; eventKey?: string; accessKind?: string }>;
+}) {
+  await requireSession();
+  const params = await searchParams;
+  const auditQuery = new URLSearchParams();
+  if (params.from) auditQuery.set('from', params.from);
+  if (params.to) auditQuery.set('to', params.to);
+  if (params.eventKey) auditQuery.set('eventKey', params.eventKey);
+  const accessQuery = new URLSearchParams();
+  if (params.from) accessQuery.set('from', params.from);
+  if (params.to) accessQuery.set('to', params.to);
+  if (params.accessKind) accessQuery.set('accessKind', params.accessKind);
+
+  const [audit, dataAccess] = await Promise.all([
+    apiGet<AuditResponse>(`/audit/events?${auditQuery.toString()}`),
+    apiGet<DataAccessResponse>(`/audit/data-access?${accessQuery.toString()}`),
+  ]);
+
   return (
-    <>
+    <div style={{ padding: 'var(--space-4)' }}>
       <h1>Revision och loggar</h1>
-      <Card title="Revisionslogg (audit log)">
-        <p>
-          Alla väsentliga händelser loggas i en append-only, hash-kedjad revisionslogg:
-          personsökningar, öppnade poster, dokumentåtkomst, känsliga visningar, exportförslag,
-          godkännanden, UBM-exporter, regeländringar, mottagarändringar, support- och
-          break-glass-sessioner, migreringar, gallring och AI-förslag. Kedjan kan verifieras och
-          manipulation upptäcks.
-        </p>
+      <p>
+        Alla känsliga åtgärder skrivs till en beständig, hash-kedjad revisionslogg. All läsning av
+        personuppgifter skrivs till dataåtkomstloggen. Loggarna kan inte ändras i efterhand.
+      </p>
+
+      <Card title="Filter">
+        <form method="get" style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+          <label>
+            Från <input type="date" name="from" defaultValue={params.from ?? ''} />
+          </label>
+          <label>
+            Till <input type="date" name="to" defaultValue={params.to ?? ''} />
+          </label>
+          <label>
+            Händelsetyp{' '}
+            <input
+              type="text"
+              name="eventKey"
+              placeholder="t.ex. export.proposal_created"
+              defaultValue={params.eventKey ?? ''}
+            />
+          </label>
+          <label>
+            Åtkomsttyp{' '}
+            <input
+              type="text"
+              name="accessKind"
+              placeholder="t.ex. sensitive_field_reveal"
+              defaultValue={params.accessKind ?? ''}
+            />
+          </label>
+          <button type="submit">Filtrera</button>
+        </form>
       </Card>
+
+      <Card title="Revisionslogg">
+        <ApiStateGuard result={audit} />
+        {audit.kind === 'ok' ? (
+          audit.data.events.length === 0 ? (
+            <NoDataYet what="inga revisionshändelser" />
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--color-border)' }}>
+                  <th style={{ padding: 'var(--space-2)' }}>Tid</th>
+                  <th style={{ padding: 'var(--space-2)' }}>Händelse</th>
+                  <th style={{ padding: 'var(--space-2)' }}>Åtgärd</th>
+                  <th style={{ padding: 'var(--space-2)' }}>Utfall</th>
+                </tr>
+              </thead>
+              <tbody>
+                {audit.data.events.map((event) => (
+                  <tr key={event.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                    <td style={{ padding: 'var(--space-2)' }}>
+                      {event.occurredAt.slice(0, 19).replace('T', ' ')}
+                    </td>
+                    <td style={{ padding: 'var(--space-2)' }}>{event.eventKey}</td>
+                    <td style={{ padding: 'var(--space-2)' }}>{event.action}</td>
+                    <td style={{ padding: 'var(--space-2)' }}>{event.outcome}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )
+        ) : null}
+      </Card>
+
       <Card title="Dataåtkomstlogg">
-        <p>
-          Varje åtkomst till personuppgifter loggas med vem, vad, när, i vilken roll, i vilket
-          ärende och med vilket skäl. Skäl krävs alltid för medicinska uppgifter, skyddad identitet,
-          barns uppgifter och känsliga fält.
-        </p>
+        <ApiStateGuard result={dataAccess} />
+        {dataAccess.kind === 'ok' ? (
+          dataAccess.data.events.length === 0 ? (
+            <NoDataYet what="inga dataåtkomsthändelser" />
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--color-border)' }}>
+                  <th style={{ padding: 'var(--space-2)' }}>Tid</th>
+                  <th style={{ padding: 'var(--space-2)' }}>Åtkomsttyp</th>
+                  <th style={{ padding: 'var(--space-2)' }}>Skäl</th>
+                  <th style={{ padding: 'var(--space-2)' }}>Sessionstyp</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dataAccess.data.events.map((event) => (
+                  <tr key={event.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                    <td style={{ padding: 'var(--space-2)' }}>
+                      {event.occurredAt.slice(0, 19).replace('T', ' ')}
+                    </td>
+                    <td style={{ padding: 'var(--space-2)' }}>{event.accessKind}</td>
+                    <td style={{ padding: 'var(--space-2)' }}>{event.reason ?? '—'}</td>
+                    <td style={{ padding: 'var(--space-2)' }}>{event.sessionKind}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )
+        ) : null}
       </Card>
-      <Card title="Beviskedja">
-        <p>
-          Kontrollärenden, UBM-exporter och riskflaggor bär en hash-länkad beviskedja: källposter,
-          importbatchar, regelversioner, schemaversioner, granskningsbeslut, godkännanden,
-          exportpaket och kvittenser — spårbart i efterhand med kontrollsummor.
-        </p>
-      </Card>
-    </>
+    </div>
   );
 }

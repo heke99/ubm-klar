@@ -1,4 +1,5 @@
 import 'server-only';
+import { LOCAL_DEV_SESSION_SECRET } from '@ubm-klar/auth';
 
 /**
  * Server-side auth configuration for the web app. Values are read from the
@@ -29,7 +30,7 @@ export function getWebAuthConfig(): WebAuthConfig {
         : 'local');
   const isProductionLike = mode === 'stage' || mode === 'prod';
   const sessionSecret =
-    process.env.SESSION_SECRET ?? (isProductionLike ? '' : 'local-dev-session-secret-32-chars!!');
+    process.env.SESSION_SECRET ?? (isProductionLike ? '' : LOCAL_DEV_SESSION_SECRET);
   if (!sessionSecret) {
     // instrumentation.ts already fails startup in stage/prod; this is defence in depth.
     throw new Error('SESSION_SECRET is required in stage/prod');

@@ -1,15 +1,17 @@
 import { Card, StatusBadge } from '../../design-system/components';
+import { requireSession } from '../../lib/require-session';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
 /** Arkiv: klassificering, gallring, rättsliga undantag, e-arkiv. */
-export default function ArkivPage() {
+export default async function ArkivPage() {
+  await requireSession();
   return (
-    <>
+    <div style={{ padding: 'var(--space-4)' }}>
       <h1>Arkiv</h1>
       <Card title="Gallring och bevarande">
         <table>
-          <caption>Gallringsregler (demo)</caption>
+          <caption>Standardgallringsregler (konfigureras per kommun)</caption>
           <thead>
             <tr>
               <th scope="col">Klassificering</th>
@@ -48,6 +50,6 @@ export default function ArkivPage() {
           verifieras mot manifestet och kräver arkivbehörighet samt godkännande.
         </p>
       </Card>
-    </>
+    </div>
   );
 }

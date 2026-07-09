@@ -210,3 +210,17 @@ Closes P0-8 (demo data served as business data) and P0-9 (no database repositori
   demo data requires demo tenant + environment flag + tenant feature flag — the demo
   generators are not even constructed on stage/prod servers.
 - CI database job now also runs the repository test suites against Postgres 16.
+
+## Pilot Batch 7 — real web UI (2026-07-09)
+
+Closes the web half of P0-8 (force-static demo pages) and P0-6 remainder (role-based
+navigation).
+
+- `demo-data.ts` deleted; zero `force-static` pages; all pages fetch real API data
+  server-side with loading/empty/error/forbidden states; pilot banner + environment
+  badge + tenant banner in the shell; role-based navigation from the verified session.
+- Evidence (manual run against live API+web): demo tenant renders demo dashboard with
+  an explicit synthetic-data warning; production-tenant empty database renders
+  "inga uppgifter" (no fake stats); unauthorized role gets "Behörighet saknas" from a
+  backend 403; anonymous users are redirected to /login; `next build` and full test
+  suite green.

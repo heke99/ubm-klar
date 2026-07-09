@@ -1,62 +1,125 @@
 import { Card, StatGrid } from '../../design-system/components';
-import { demo, formatSek } from '../../components/demo-data';
+import { apiGet } from '../../lib/api';
+import { requireSession } from '../../lib/require-session';
+import { ApiStateGuard, DemoDataWarning, NoDataYet } from '../../components/page-states';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
-/** LSS-dashboard: beslutstimmar, fakturerat, utfört, utförarrisk. */
-export default function LssPage() {
-  const dashboard = demo.lss.dashboard;
+interface LssDashboard {
+  dataSource: 'data_plane' | 'demo' | 'empty';
+  stats?: {
+    personsTotal: number;
+    activeDecisions: number;
+    paymentsTotal: number;
+    paidAmountSekTotal: number;
+    openRiskFlags: number;
+    flagsBySeverity: Record<string, number>;
+    openRecoveryClaims: number;
+    providersTotal: number;
+    unapprovedTimeReports: number;
+    amountAtRiskSekTotal: number;
+  };
+  demoDashboard?: {
+    decidedHoursTotal: number;
+    reportedHoursTotal: number;
+    paidAmountSekTotal: number;
+    flagsBySeverity: Record<string, number>;
+    openRecoveryClaims: number;
+    amountAtRiskSekTotal: number;
+  };
+}
+
+const formatSek = (value: number) =>
+  new Intl.NumberFormat('sv-SE', {
+    style: 'currency',
+    currency: 'SEK',
+    maximumFractionDigits: 0,
+  }).format(value);
+
+export default async function LssPage() {
+  await requireSession();
+  const result = await apiGet<LssDashboard>('/dashboards/lss');
+
   return (
-    <>
-      <h1>LSS</h1>
-      <StatGrid
-        stats={[
-          { label: 'Beslutade timmar', value: dashboard.decidedHoursTotal.toLocaleString('sv-SE') },
-          {
-            label: 'Rapporterade timmar',
-            value: dashboard.reportedHoursTotal.toLocaleString('sv-SE'),
-          },
-          {
-            label: 'Fakturerade timmar',
-            value: dashboard.invoicedHoursTotal.toLocaleString('sv-SE'),
-          },
-          { label: 'Utbetalt belopp', value: formatSek(dashboard.paidAmountSekTotal) },
-          { label: 'Beslut med avvikelser', value: dashboard.decisionsWithIssues, tone: 'warning' },
-          {
-            label: 'Utförare utan aktivt IVO-tillstånd',
-            value: dashboard.providersWithoutActivePermit,
-            tone: 'danger',
-          },
-          {
-            label: 'Ogodkända tidrapporter',
-            value: dashboard.unapprovedTimeReports,
-            tone: 'warning',
-          },
-          { label: 'Öppna återkrav', value: dashboard.openRecoveryClaims, tone: 'warning' },
-          { label: 'Riskbelopp', value: formatSek(dashboard.amountAtRiskSekTotal), tone: 'danger' },
-        ]}
-      />
-      <Card title="Riskflaggor per regel">
-        <table>
-          <caption>LSS-riskflaggor per regel (demo)</caption>
-          <thead>
-            <tr>
-              <th scope="col">Regel</th>
-              <th scope="col">Antal</th>
-              <th scope="col">Riskbelopp</th>
-            </tr>
-          </thead>
-          <tbody>
-            {dashboard.flagsByRule.slice(0, 10).map((row) => (
-              <tr key={row.ruleKey}>
-                <td>{row.ruleKey}</td>
-                <td>{row.count}</td>
-                <td>{formatSek(row.amountAtRiskSek)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
-    </>
+    <div style={{ padding: 'var(--space-4)' }}>
+      <h1>LSS och personlig assistans</h1>
+      <ApiStateGuard result={result} />
+      {result.kind === 'ok' ? (
+        result.data.dataSource === 'empty' ? (
+          <NoDataYet what="inga LSS-uppgifter" />
+        ) : result.data.dataSource === 'demo' ? (
+          <>
+            <DemoDataWarning />
+            <StatGrid
+              stats={[
+                {
+                  label: 'Beslutade timmar',
+                  value: result.data.demoDashboard?.decidedHoursTotal ?? 0,
+                },
+                {
+                  label: 'Rapporterade timmar',
+                  value: result.data.demoDashboard?.reportedHoursTotal ?? 0,
+                },
+                {
+                  label: 'Utbetalt',
+                  value: formatSek(result.data.demoDashboard?.paidAmountSekTotal ?? 0),
+                },
+                {
+                  label: 'Riskbelopp',
+                  value: formatSek(result.data.demoDashboard?.amountAtRiskSekTotal ?? 0),
+                  tone: 'danger',
+                },
+                {
+                  label: 'Öppna återkrav',
+                  value: result.data.demoDashboard?.openRecoveryClaims ?? 0,
+                },
+              ]}
+            />
+          </>
+        ) : (
+          <>
+            <StatGrid
+              stats={[
+                { label: 'Personer med LSS-profil', value: result.data.stats?.personsTotal ?? 0 },
+                { label: 'Aktiva beslut', value: result.data.stats?.activeDecisions ?? 0 },
+                { label: 'Utbetalningar', value: result.data.stats?.paymentsTotal ?? 0 },
+                { label: 'Utbetalt', value: formatSek(result.data.stats?.paidAmountSekTotal ?? 0) },
+                {
+                  label: 'Öppna riskflaggor',
+                  value: result.data.stats?.openRiskFlags ?? 0,
+                  tone: 'warning',
+                },
+                {
+                  label: 'Riskbelopp',
+                  value: formatSek(result.data.stats?.amountAtRiskSekTotal ?? 0),
+                  tone: 'danger',
+                },
+                { label: 'Öppna återkrav', value: result.data.stats?.openRecoveryClaims ?? 0 },
+                { label: 'Anordnare', value: result.data.stats?.providersTotal ?? 0 },
+                {
+                  label: 'Ej godkända tidrapporter',
+                  value: result.data.stats?.unapprovedTimeReports ?? 0,
+                },
+              ]}
+            />
+            <Card title="Riskflaggor per allvarlighetsgrad">
+              {Object.keys(result.data.stats?.flagsBySeverity ?? {}).length === 0 ? (
+                <p>Inga öppna riskflaggor.</p>
+              ) : (
+                <ul>
+                  {Object.entries(result.data.stats?.flagsBySeverity ?? {}).map(
+                    ([severity, count]) => (
+                      <li key={severity}>
+                        {severity}: {count}
+                      </li>
+                    ),
+                  )}
+                </ul>
+              )}
+            </Card>
+          </>
+        )
+      ) : null}
+    </div>
   );
 }

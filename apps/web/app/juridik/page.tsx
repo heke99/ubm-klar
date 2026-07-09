@@ -1,60 +1,56 @@
 import { Card, StatusBadge } from '../../design-system/components';
-import { demo } from '../../components/demo-data';
+import { apiGet } from '../../lib/api';
+import { requireSession } from '../../lib/require-session';
+import { ApiStateGuard, NoDataYet } from '../../components/page-states';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
-/** Juridik och DPO: granskningar, känsliga åtkomster, utlämnanden. */
-export default function JuridikPage() {
-  const sensitiveFlags = demo.allFlags.filter((f) =>
-    [
-      'lss_sensitive_document_access_without_reason',
-      'ea_sensitive_field_reveal_without_reason',
-      'lss_protected_identity_without_elevated_protection',
-      'ea_protected_household_without_elevated_access',
-    ].includes(f.ruleKey),
-  );
+interface ProposalsResponse {
+  dataSource: string;
+  proposals: Array<{ id: string; proposalNumber: string; status: string }>;
+}
+
+/** Juridik och DPO: granskningar, känsliga åtkomster, dataskyddsstatus. */
+export default async function JuridikPage() {
+  await requireSession();
+  const proposals = await apiGet<ProposalsResponse>('/ubm/export-proposals');
+  const inReview =
+    proposals.kind === 'ok' ? proposals.data.proposals.filter((p) => p.status === 'in_review') : [];
+
   return (
-    <>
+    <div style={{ padding: 'var(--space-4)' }}>
       <h1>Juridik och DPO</h1>
-      <Card title="Väntar på granskning (demo)">
+      <Card title="Exportförslag som väntar på granskning">
+        <ApiStateGuard result={proposals} />
+        {proposals.kind === 'ok' ? (
+          inReview.length === 0 ? (
+            <NoDataYet what="inga exportförslag som väntar på juridisk granskning" />
+          ) : (
+            <ul>
+              {inReview.map((proposal) => (
+                <li key={proposal.id}>
+                  <a href={`/exportforslag/${proposal.id}`}>{proposal.proposalNumber}</a>{' '}
+                  <StatusBadge status="Under granskning" tone="warning" />
+                </li>
+              ))}
+            </ul>
+          )
+        ) : null}
+      </Card>
+      <Card title="Dataskydd och rättsligt stöd">
         <ul>
-          <li>
-            Exportförslag UBM-2026-0002{' '}
-            <StatusBadge status="Kräver juridisk granskning" tone="warning" />
-          </li>
-          <li>
-            Exportförslag UBM-2026-0003{' '}
-            <StatusBadge status="Kräver DPO-granskning" tone="warning" />
-          </li>
-          <li>
-            Utlämnandeärende AH-2026-011{' '}
-            <StatusBadge status="Sekretessprövning pågår" tone="info" />
-          </li>
+          <li>Rättslig grund per modul: se dokumentationen för registerförteckningen</li>
+          <li>PUB-avtal/DPA: status hanteras i onboarding-grindarna</li>
+          <li>DPIA: status hanteras i onboarding-grindarna</li>
+          <li>Gallringspolicy: se Arkiv</li>
+          <li>Rutin för registerutdrag och registrerades rättigheter</li>
+          <li>Underbiträdesförteckning</li>
         </ul>
+        <p>
+          <a href="/revision">Öppna revisions- och dataåtkomstloggen</a> för att granska känsliga
+          åtkomster, avslag och break-glass-sessioner.
+        </p>
       </Card>
-      <Card title="Känsliga åtkomster att granska">
-        {sensitiveFlags.length === 0 ? (
-          <p>Inga avvikande känsliga åtkomster i perioden.</p>
-        ) : (
-          <ul>
-            {sensitiveFlags.slice(0, 8).map((flag, i) => (
-              <li key={i}>
-                <StatusBadge status={flag.severity} tone="danger" /> {flag.explanation}
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
-      <Card title="DPO-verktyg">
-        <ul>
-          <li>Åtkomstgranskningsrapport (nyfikenhetsdetektering)</li>
-          <li>Break-glass-sessioner med efterhandsgranskning</li>
-          <li>Supportsessioner (alltid utan personuppgifter)</li>
-          <li>Registerutdrag och dataskyddsärenden</li>
-          <li>DPIA-dokumentation och rättslig grund per datatyp</li>
-          <li>Gallringsstatus och utlämnandehistorik</li>
-        </ul>
-      </Card>
-    </>
+    </div>
   );
 }

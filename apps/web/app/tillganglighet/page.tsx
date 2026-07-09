@@ -1,7 +1,7 @@
 import { Card } from '../../design-system/components';
 import { PRODUCT_NAME } from '@ubm-klar/shared-types';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
 /** Tillgänglighetsredogörelse enligt lagen om tillgänglighet till digital offentlig service. */
 export default function TillganglighetPage() {

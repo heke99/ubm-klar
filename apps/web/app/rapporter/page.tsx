@@ -1,43 +1,41 @@
 import { Card } from '../../design-system/components';
-import { demo, formatSek, readinessScores } from '../../components/demo-data';
+import { requireSession } from '../../lib/require-session';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
-/** Rapporter: exporterbara lednings- och verksamhetsrapporter. */
-export default function RapporterPage() {
+/** Rapporter: exporterbara lednings- och verksamhetsrapporter över verkliga data. */
+export default async function RapporterPage() {
+  await requireSession();
+
+  const reports = [
+    { href: '/rapporter/ubm-beredskap', label: 'UBM-beredskapsrapport' },
+    { href: '/rapporter/ubm-forfragningar', label: 'Öppna UBM-förfrågningar och svarsfrister' },
+    { href: '/rapporter/exportforslag', label: 'Exportförslag per status och blockeringsorsaker' },
+    { href: '/rapporter/lss-risk', label: 'LSS-betalningsrisker' },
+    { href: '/rapporter/eb-risk', label: 'Ekonomiskt bistånd — betalningsrisker' },
+    { href: '/rapporter/kontrollarenden', label: 'Kontrollärenden' },
+    { href: '/rapporter/datakvalitet', label: 'Datakvalitet och importfel' },
+    { href: '/rapporter/atkomst', label: 'Revisions- och dataåtkomstrapport' },
+    { href: '/rapporter/go-live', label: 'Go-live-beredskap' },
+    { href: '/rapporter/pilot', label: 'Pilotutfall' },
+  ];
+
   return (
-    <>
+    <div style={{ padding: 'var(--space-4)' }}>
       <h1>Rapporter</h1>
       <Card title="Tillgängliga rapporter">
-        <ul>
-          <li>Ledningsrapport: beredskap, riskbelopp, trender per månad</li>
-          <li>UBM-rapport: förfrågningar, exportförslag, blockerade exporter, kvittenser</li>
-          <li>LSS-rapport: timmar, fakturering, utförarrisk, IVO-status</li>
-          <li>EB-rapport: ansökningar, beslut, utbetalningar, anomalier</li>
-          <li>Betalningskontrollrapport: avstämningar, dubbletter, mottagaravvikelser</li>
-          <li>DPO-rapport: åtkomster, känsliga visningar, break-glass-sessioner</li>
-          <li>Arkivrapport: gallringsstatus, arkivuttag</li>
-        </ul>
         <p>
-          Alla rapporter kan filtreras per period, förvaltning, utförare och allvarlighetsgrad samt
-          exporteras.
+          Rapporterna bygger på kommunens verkliga data och respekterar behörighetsmodellen —
+          uppgifter du inte har rätt att se ingår inte. Export finns som CSV, XLSX och JSON.
         </p>
-      </Card>
-      <Card title="Nyckeltal just nu (demo)">
         <ul>
-          <li>
-            Riskbelopp totalt:{' '}
-            {formatSek(
-              demo.lss.dashboard.amountAtRiskSekTotal + demo.ea.dashboard.amountAtRiskSekTotal,
-            )}
-          </li>
-          <li>
-            Produktionsberedskap:{' '}
-            {readinessScores.find((s) => s.scoreKey === 'production_readiness')?.score} %
-          </li>
-          <li>Riskflaggor: {demo.allFlags.length}</li>
+          {reports.map((report) => (
+            <li key={report.href}>
+              <a href={report.href}>{report.label}</a>
+            </li>
+          ))}
         </ul>
       </Card>
-    </>
+    </div>
   );
 }

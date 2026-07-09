@@ -361,8 +361,11 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
 
   app.get('/tenant', async (request) => ({
     municipality: request.tenant?.municipalityName,
+    tenantSlug: request.tenant?.tenantSlug,
     environment: request.tenant?.environment,
+    tenantStatus: request.tenant?.tenantStatus,
     modules: request.tenant?.activeModules,
+    featureFlags: request.tenant?.featureFlags,
     // publishable key only; service keys never leave the backend process
     dataPlanePublishableKey: request.tenant?.dataPlanePublishableKey,
   }));
@@ -497,6 +500,81 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
       request.repositories.readiness.goLiveStatus(),
     ]);
     return { dataSource: 'data_plane', gates, goLive };
+  });
+
+  app.get('/ubm/export-proposals', async (request, reply) => {
+    if (!requirePermission(request, reply, 'ubm.request.read', { kind: 'ubm_export_proposal' }))
+      return;
+    if (!request.repositories) return { dataSource: 'empty', proposals: [], counts: {} };
+    const [proposals, counts] = await Promise.all([
+      request.repositories.exportProposals.list({ limit: 100 }),
+      request.repositories.exportProposals.countByStatus(),
+    ]);
+    return { dataSource: 'data_plane', proposals, counts };
+  });
+
+  app.get('/ubm/notifications', async (request, reply) => {
+    if (!requirePermission(request, reply, 'ubm.notification.handle', { kind: 'ubm_notification' }))
+      return;
+    if (!request.repositories) return { dataSource: 'empty', notifications: [], counts: {} };
+    const [notifications, counts] = await Promise.all([
+      request.repositories.notifications.list({ limit: 100 }),
+      request.repositories.notifications.countByStatus(),
+    ]);
+    return { dataSource: 'data_plane', notifications, counts };
+  });
+
+  app.get('/imports', async (request, reply) => {
+    if (!requirePermission(request, reply, 'import.run', { kind: 'import_batch' })) return;
+    if (!request.repositories) return { dataSource: 'empty', batches: [] };
+    const batches = await request.repositories.importBatches.list(100);
+    return { dataSource: 'data_plane', batches };
+  });
+
+  app.get('/documents', async (request, reply) => {
+    if (!requirePermission(request, reply, 'document.read', { kind: 'document' })) return;
+    if (!request.repositories) return { dataSource: 'empty', documents: [] };
+    const documents = await request.repositories.documents.list({ limit: 100 });
+    // Document *list* access is logged as case-level access (no content opened).
+    logTechnical(request, 'DOCUMENT_LIST_READ', { count: documents.length });
+    return { dataSource: 'data_plane', documents };
+  });
+
+  app.get<{
+    Querystring: {
+      from?: string;
+      to?: string;
+      actor?: string;
+      eventKey?: string;
+      outcome?: string;
+    };
+  }>('/audit/events', async (request, reply) => {
+    if (!requirePermission(request, reply, 'audit.read', { kind: 'audit_log' })) return;
+    if (!request.repositories) return { dataSource: 'empty', events: [] };
+    const q = request.query;
+    const events = await request.repositories.audit.query({
+      ...(q.from ? { from: q.from } : {}),
+      ...(q.to ? { to: q.to } : {}),
+      ...(q.eventKey ? { eventKey: q.eventKey } : {}),
+      ...(q.outcome ? { outcome: q.outcome as 'success' | 'denied' | 'failed' } : {}),
+      limit: 200,
+    });
+    return { dataSource: 'data_plane', events };
+  });
+
+  app.get<{
+    Querystring: { from?: string; to?: string; accessKind?: string };
+  }>('/audit/data-access', async (request, reply) => {
+    if (!requirePermission(request, reply, 'access_log.read', { kind: 'data_access_log' })) return;
+    if (!request.repositories) return { dataSource: 'empty', events: [] };
+    const q = request.query;
+    const events = await request.repositories.dataAccess.query({
+      ...(q.from ? { from: q.from } : {}),
+      ...(q.to ? { to: q.to } : {}),
+      ...(q.accessKind ? { accessKind: q.accessKind } : {}),
+      limit: 200,
+    });
+    return { dataSource: 'data_plane', events };
   });
 
   // --- UBM eligibility -------------------------------------------------------

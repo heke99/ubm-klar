@@ -966,3 +966,43 @@ runtime behaviour.
   `generateEaDemoData` (three-layer gate + lazy construction); all repository writes
   that touch cases create event rows; correlation ids never contain PII.
 - **Status:** production-safe.
+
+## Pilot Batch 7 — Web app: real product UI instead of static demo
+
+- **Implemented:**
+  - `apps/web/components/demo-data.ts` DELETED; `DEMO_ROLES` removed. No customer page
+    imports demo data; no page uses `force-static` any more (all dynamic).
+  - Server-side API client (`lib/api.ts`): forwards Host + encrypted session cookie to
+    the backend; discriminated results (`ok/unauthenticated/forbidden/unknown_tenant/
+error`) so pages render honest states without leaking backend details.
+  - Authenticated app shell (`app/layout.tsx`): tenant banner (municipality from
+    `/tenant`), environment badge, pilot banner ("Kundpilotläge — officiell
+    UBM-överföring avstängd, endast manuell export…"), user menu with logout,
+    role-based navigation from the verified session.
+  - Pages rewritten against real API data with loading/empty/error/forbidden states:
+    `/` (overview), `/lss`, `/ekonomiskt-bistand`, `/betalningskontroll`,
+    `/kontrollarenden`, `/ubm-forfragningar`, `/exportforslag`, `/underrattelser`,
+    `/importer`, `/dokument`, `/revision` (audit + data access logs with date/type
+    filters), `/installningar` + `/ubm-beredskap` (real readiness gates), `/juridik`,
+    `/rapporter`, `/arkiv`; new pages `/onboarding`, `/pilot` (pilot limitations),
+    `/stod` (no-PII support model). Swedish clear language throughout.
+  - New API endpoints backing the pages: `/ubm/export-proposals`, `/ubm/notifications`,
+    `/imports`, `/documents`, `/audit/events`, `/audit/data-access` (all
+    permission-gated, all with dataSource marker and honest empty payloads).
+  - Shared `LOCAL_DEV_SESSION_SECRET` so web+API sessions work with zero config in
+    local/demo (loadAppConfig requires a real SESSION_SECRET in stage/prod).
+- **Files:** `apps/web/app/**` (20+ pages), `apps/web/lib/*`,
+  `apps/web/components/{navigation,page-states}.tsx`, `apps/api/src/server.ts`.
+- **Migrations:** none.
+- **Tests/verification:** full suite green (38 tasks); `next build` green; manual
+  end-to-end against running API+web: demo tenant shows demo dashboard WITH the
+  synthetic-data warning; `lss_case_worker` visiting `/ubm-forfragningar` gets
+  "Behörighet saknas" (backend 403); unauthenticated `/lss` redirects to `/login`;
+  navigation varies by role; pilot banner visible.
+- **Commands run:** typecheck/test/lint/format/safety-check + manual curl flows.
+- **Remaining:** form pages (`/importer/new`, `/ubm-forfragningar/new`, detail pages)
+  land with their backend flows in Batches 9–11, 16–17.
+- **Env vars:** `API_BASE_URL` used by the web server-side client.
+- **Security notes:** frontend can no longer fabricate data: every page shows only
+  what the backend authorizes; empty databases show empty states.
+- **Status:** production-safe.

@@ -1,5 +1,5 @@
 import { loadAppConfig, UnsafeProductionConfigError } from '@ubm-klar/config';
-import { OidcTokenVerifier } from '@ubm-klar/auth';
+import { LOCAL_DEV_SESSION_SECRET, OidcTokenVerifier } from '@ubm-klar/auth';
 import { buildApiServer, type ApiAuthOptions } from './server';
 import { TenantDataPlanePool } from './data-plane';
 import { ControlPlaneTenantDirectory, type TenantDirectory } from '@ubm-klar/tenant-resolver';
@@ -57,9 +57,9 @@ function buildAuthOptions(): ApiAuthOptions {
       ...(config.auth.jwksUri ? { jwksUri: config.auth.jwksUri } : {}),
     });
   }
-  if (process.env.SESSION_SECRET) {
-    auth.sessionSecret = process.env.SESSION_SECRET;
-  }
+  const sessionSecret =
+    process.env.SESSION_SECRET ?? (config.isProductionLike ? undefined : LOCAL_DEV_SESSION_SECRET);
+  if (sessionSecret) auth.sessionSecret = sessionSecret;
   if (config.auth.headerProxy.trusted && process.env.INTERNAL_AUTH_PROXY_SECRET) {
     auth.headerProxy = {
       trusted: true,
