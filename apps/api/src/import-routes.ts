@@ -122,12 +122,10 @@ export function registerImportRoutes(app: FastifyInstance, options: ImportRoutes
         const delimiter = (text.split('\n')[0] ?? '').includes(';') ? ';' : ',';
         table = parseCsv(text, delimiter);
       } else {
-        return reply
-          .status(422)
-          .send({
-            error: 'unsupported_format',
-            message: `Formatet kunde inte identifieras (${format}).`,
-          });
+        return reply.status(422).send({
+          error: 'unsupported_format',
+          message: `Formatet kunde inte identifieras (${format}).`,
+        });
       }
     } catch (error) {
       if (error instanceof ImportParseError || error instanceof XlsxParseError) {
@@ -451,12 +449,10 @@ export function registerImportRoutes(app: FastifyInstance, options: ImportRoutes
     );
     const validRows = staged.rows.filter((r) => r.mapped !== null && r.errors.length === 0);
     if (validRows.length === 0) {
-      return reply
-        .status(422)
-        .send({
-          error: 'no_valid_rows',
-          message: 'Inga giltiga rader att läsa in — validera först.',
-        });
+      return reply.status(422).send({
+        error: 'no_valid_rows',
+        message: 'Inga giltiga rader att läsa in — validera först.',
+      });
     }
 
     const profileId = await repos.users.ensureUserProfile(request.subject!.userId);
