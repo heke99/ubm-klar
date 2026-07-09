@@ -196,3 +196,17 @@ Closes P0-5 (header auth) and P0-6 (no web login/session).
   wrong-issuer tokens -> 401; tampered session cookie -> 401; forged proxy signature
   -> 401. Web refused to start in prod without auth config; demo login only exists
   outside stage/prod (404 otherwise).
+
+## Pilot Batch 6 — repositories and real API data (2026-07-09)
+
+Closes P0-8 (demo data served as business data) and P0-9 (no database repositories).
+
+- 13 repositories against the release 1.0.0 data-plane schema; per-tenant Postgres
+  pools; correlation ids on every request; no-PII technical logs.
+- Evidence: 11 repository tests PASS against live Postgres 16 (full audited control
+  case lifecycle, UBM request/subject persistence, import idempotency, readiness
+  gates blocking go-live, audit + data access event round-trips). Server tests prove:
+  a production tenant without data shows `dataSource: 'empty'` (no fake stats), and
+  demo data requires demo tenant + environment flag + tenant feature flag — the demo
+  generators are not even constructed on stage/prod servers.
+- CI database job now also runs the repository test suites against Postgres 16.

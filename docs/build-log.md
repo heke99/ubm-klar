@@ -919,3 +919,50 @@ runtime behaviour.
   audit event on deny); need-to-know rules from `@ubm-klar/access-control` unchanged
   and exercised by the API tests; dev login structurally unreachable in stage/prod.
 - **Status:** production-safe.
+
+## Pilot Batch 6 — Database repositories and real API data
+
+- **Implemented:**
+  - `TenantDataPlanePool` (apps/api/src/data-plane.ts): per-tenant Postgres pools from
+    `DATA_PLANE_DATABASE_URL__{SLUG}__{ENV}` (or `DATA_PLANE_DATABASE_URL` for
+    single-tenant); service credentials server-side only.
+  - Repository layer (apps/api/src/repositories/): Users (subject id ->
+    user_profiles), Lss, EconomicAssistance (dashboard aggregates), UbmRequest
+    (create/list/status/subjects), ExportProposal (create/rows/status),
+    ImportBatch (create/errors/status/idempotency by file hash), Document (metadata +
+    buckets + scan/redaction status), Audit (insert/query/chain), DataAccess
+    (insert/query), Readiness (gates/evidence/go-live blocking), ControlCase
+    (create/assign/notes/status history/outcome, all writes evented), PaymentControl
+    (risk flags, case linking, summaries), Notification (intake/scores/outcomes).
+  - API: correlation id on every request (accepted from `x-correlation-id` or
+    generated; echoed in the response header); no-PII technical logging via
+    `sanitizeTechnicalLogEvent`; dashboards now read real aggregates from the data
+    plane; new real-data endpoints `/payment-control`, `/control-cases`,
+    `/ubm/requests`, `/ubm/readiness`.
+  - Demo gate: demo data now requires ALL of (a) environment demo flag (config —
+    impossible in stage/prod), (b) tenant environment local/demo/test, (c) tenant
+    feature flag `demo_data_enabled`. Demo generators are lazy: they are never even
+    constructed on production servers. Empty tenants return
+    `{ dataSource: 'empty' }`, never fake stats.
+- **Files:** `apps/api/src/data-plane.ts`, `apps/api/src/repositories/*` (14 files),
+  `apps/api/src/{server,main}.ts`, `.github/workflows/ci.yml` (repository tests
+  against the Postgres service container).
+- **Migrations:** none (uses release 1.0.0 schema).
+- **Tests:** 11 repository tests against live Postgres 16 (empty-state stats, user
+  profile idempotency, UBM request+subjects lifecycle, export proposal rows,
+  import batch errors + file-hash idempotency, document metadata, audit events with
+  correlation ids, data access events, risk flag -> control case with full audited
+  action trail, notification intake -> outcome, readiness gates blocking go-live).
+  Updated server tests: production tenant without data plane gets `dataSource:
+'empty'` (never demo); demo requires demo tenant + env flag. Full suite: 38 tasks.
+- **Commands run:** `pnpm --filter @ubm-klar/api test` with
+  `DATA_PLANE_TEST_DATABASE_URL` (50 tests), `pnpm typecheck`, `pnpm test`,
+  `pnpm lint`, `pnpm production:safety-check` (13/13), `pnpm format:check`.
+- **Remaining:** person-level read endpoints (with mandatory data access logs) arrive
+  with the import/UBM flows in Batches 9–10.
+- **Env vars:** `DATA_PLANE_DATABASE_URL`, `DATA_PLANE_DATABASE_URL__{SLUG}__{ENV}`,
+  `DATA_PLANE_TEST_DATABASE_URL` (tests).
+- **Security notes:** stage/prod can never call `generateLssDemoData`/
+  `generateEaDemoData` (three-layer gate + lazy construction); all repository writes
+  that touch cases create event rows; correlation ids never contain PII.
+- **Status:** production-safe.
