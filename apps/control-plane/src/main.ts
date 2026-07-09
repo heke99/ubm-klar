@@ -44,9 +44,11 @@ async function selectStore(): Promise<ControlPlaneStore> {
 const store = await selectStore();
 const port = Number(process.env.CONTROL_PLANE_PORT ?? 3100);
 const adminToken = process.env.CONTROL_PLANE_ADMIN_TOKEN;
+const directoryToken = process.env.CONTROL_PLANE_DIRECTORY_TOKEN;
 const app = buildControlPlaneServer({
   store,
   ...(adminToken ? { adminToken } : {}),
+  ...(directoryToken ? { directoryToken } : {}),
 });
 
 app.listen({ port, host: '0.0.0.0' }).then(() => {

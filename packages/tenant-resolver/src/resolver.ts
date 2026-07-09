@@ -4,6 +4,7 @@ import {
   type EnvironmentName,
   type ModuleId,
   type SafeTenantConfig,
+  type TenantStatus,
 } from '@ubm-klar/shared-types';
 import { TtlCache } from './cache';
 
@@ -17,6 +18,7 @@ export interface TenantDirectoryRecord {
   municipalityName: string;
   deploymentMode: DeploymentMode;
   environment: EnvironmentName;
+  tenantStatus?: TenantStatus;
   domain: string;
   domainVerified: boolean;
   activeModules: ModuleId[];
@@ -135,6 +137,7 @@ function toSafeConfig(record: TenantDirectoryRecord): SafeTenantConfig {
     municipalityName: record.municipalityName,
     deploymentMode: record.deploymentMode,
     environment: record.environment,
+    ...(record.tenantStatus !== undefined ? { tenantStatus: record.tenantStatus } : {}),
     activeModules: [...record.activeModules],
     dataPlaneUrl: record.dataPlaneUrl,
     dataPlanePublishableKey: record.dataPlanePublishableKey,

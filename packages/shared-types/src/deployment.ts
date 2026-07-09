@@ -29,6 +29,10 @@ export type EnvironmentName = 'test' | 'stage' | 'prod' | 'demo' | 'local';
 
 export const PRODUCTION_ENVIRONMENT: EnvironmentName = 'prod';
 
+/** Tenant lifecycle status in the control plane. */
+export type TenantStatus =
+  'prospect' | 'onboarding' | 'pilot' | 'live' | 'suspended' | 'offboarding' | 'exited';
+
 export interface TenantEnvironmentRef {
   tenantId: string;
   environment: EnvironmentName;
@@ -44,6 +48,8 @@ export interface SafeTenantConfig {
   municipalityName: string;
   deploymentMode: DeploymentMode;
   environment: EnvironmentName;
+  /** Lifecycle status (pilot tenants get the pilot banner and pilot limits). */
+  tenantStatus?: TenantStatus;
   activeModules: ModuleId[];
   /** Public URL of the tenant's own data plane API (Model B or C). */
   dataPlaneUrl: string;

@@ -1,7 +1,11 @@
-import type { DeploymentMode, EnvironmentName, ModuleId } from '@ubm-klar/shared-types';
+import type {
+  DeploymentMode,
+  EnvironmentName,
+  ModuleId,
+  TenantStatus,
+} from '@ubm-klar/shared-types';
 
-export type TenantStatus =
-  'prospect' | 'onboarding' | 'pilot' | 'live' | 'suspended' | 'offboarding' | 'exited';
+export type { TenantStatus };
 
 export interface ControlPlaneTenant {
   id: string;

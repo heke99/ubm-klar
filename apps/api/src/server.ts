@@ -48,6 +48,8 @@ export interface ApiServerOptions {
   directory: TenantDirectory;
   /** Demo mode allows localhost with a synthetic demo tenant (never in prod). */
   allowDemoTenant?: boolean;
+  /** TTL for positive tenant lookups (failures are never cached). */
+  cacheTtlMs?: number;
 }
 
 export interface AuthenticatedContext {
@@ -124,7 +126,10 @@ function parseSubject(request: FastifyRequest): AccessSubject | undefined {
 
 export function buildApiServer(options: ApiServerOptions): FastifyInstance {
   const app = Fastify({ logger: false, disableRequestLogging: true });
-  const resolver = new TenantResolver({ directory: options.directory });
+  const resolver = new TenantResolver({
+    directory: options.directory,
+    ...(options.cacheTtlMs !== undefined ? { cacheTtlMs: options.cacheTtlMs } : {}),
+  });
   const auditLogger = new AuditLogger(new InMemoryAuditSink());
   const accessLogger = new DataAccessLogger(new InMemoryDataAccessSink());
 

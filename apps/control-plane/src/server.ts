@@ -24,6 +24,12 @@ export interface ControlPlaneServerOptions {
    * API may run open on localhost.
    */
   adminToken?: string;
+  /**
+   * Scope-limited token for the API/web tenant resolver: grants access to
+   * /directory/* lookups only (least privilege — the API never holds the
+   * admin token).
+   */
+  directoryToken?: string;
 }
 
 function tokenMatches(expected: string, presented: string): boolean {
@@ -39,7 +45,7 @@ function tokenMatches(expected: string, presented: string): boolean {
  * like personal data is rejected with 422 and never persisted or logged.
  */
 export function buildControlPlaneServer(options: ControlPlaneServerOptions): FastifyInstance {
-  const { store, adminToken } = options;
+  const { store, adminToken, directoryToken } = options;
   const app = Fastify({
     logger: false,
     // Never echo request bodies into errors/logs; bodies may be rejected PII attempts.
@@ -52,9 +58,17 @@ export function buildControlPlaneServer(options: ControlPlaneServerOptions): Fas
     if (!adminToken) return;
     const header = request.headers.authorization ?? '';
     const presented = header.startsWith('Bearer ') ? header.slice('Bearer '.length) : '';
-    if (!presented || !tokenMatches(adminToken, presented)) {
-      return reply.status(401).send({ error: 'unauthorized' });
+    if (!presented) return reply.status(401).send({ error: 'unauthorized' });
+    if (tokenMatches(adminToken, presented)) return;
+    // Directory token grants read access to /directory/* lookups only.
+    if (
+      directoryToken &&
+      request.url.startsWith('/directory/') &&
+      tokenMatches(directoryToken, presented)
+    ) {
+      return;
     }
+    return reply.status(401).send({ error: 'unauthorized' });
   });
 
   app.addHook('preValidation', async (request, reply) => {
