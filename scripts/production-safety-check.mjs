@@ -111,10 +111,71 @@ function expectProductionRefusal(name, entry, env, mustMention) {
 
 // --- App startup fail-closed -------------------------------------------------
 
+/**
+ * A complete, otherwise-valid production environment. Individual checks break
+ * one rule at a time and assert the app refuses to start.
+ */
+const VALID_PROD_ENV = {
+  APP_BASE_URL: 'https://kommun.ubmklar.se',
+  API_BASE_URL: 'https://api.kommun.ubmklar.se',
+  CONTROL_PLANE_URL: 'https://control.ubmklar.se',
+  CONTROL_PLANE_DATABASE_URL: 'postgresql://cp',
+  CONTROL_PLANE_ADMIN_TOKEN: 'token-ref',
+  TENANT_RESOLVER_FAIL_CLOSED: 'true',
+  AUTH_PROVIDER: 'entra_id',
+  AUTH_ISSUER: 'https://login.microsoftonline.com/tenant/v2.0',
+  AUTH_CLIENT_ID: 'client-id',
+  SESSION_SECRET: 'secret-ref',
+  DATA_PLANE_SERVICE_KEY_SOURCE: 'env',
+  DOCUMENT_STORAGE_PROVIDER: 'supabase',
+  MALWARE_SCANNER_PROVIDER: 'clamav',
+  AUDIT_SINK: 'postgres',
+  DATA_ACCESS_SINK: 'postgres',
+  QUEUE_PROVIDER: 'postgres',
+  WORKER_QUEUE_URL: 'postgresql://queue',
+  RELEASE_SIGNING_PUBLIC_KEY: 'pem',
+  BACKUP_PROVIDER: 'supabase-pitr',
+};
+
 expectProductionRefusal(
-  'api: refuses empty tenant directory / demo tenant in prod',
+  'api: refuses empty config / empty tenant directory in prod',
   'apps/api/src/main.ts',
   { CONTROL_PLANE_URL: '' },
+  'production start refused',
+);
+
+expectProductionRefusal(
+  'api: refuses demo data provider in prod',
+  'apps/api/src/main.ts',
+  { ...VALID_PROD_ENV, DEMO_DATA_ENABLED: 'true' },
+  'production start refused',
+);
+
+expectProductionRefusal(
+  'api: refuses demo tenant in prod',
+  'apps/api/src/main.ts',
+  { ...VALID_PROD_ENV, ALLOW_DEMO_TENANT: 'true' },
+  'production start refused',
+);
+
+expectProductionRefusal(
+  'api: refuses disabled-local malware scanner in prod',
+  'apps/api/src/main.ts',
+  { ...VALID_PROD_ENV, MALWARE_SCANNER_PROVIDER: 'disabled-local' },
+  'production start refused',
+);
+
+expectProductionRefusal(
+  'api: refuses header auth without trusted proxy in prod',
+  'apps/api/src/main.ts',
+  { ...VALID_PROD_ENV, AUTH_PROVIDER: 'header-proxy' },
+  'production start refused',
+);
+
+expectProductionRefusal(
+  'api: refuses official UBM transport flag',
+  'apps/api/src/main.ts',
+  { ...VALID_PROD_ENV, UBM_OFFICIAL_TRANSPORT: 'enabled' },
   'production start refused',
 );
 
@@ -127,6 +188,13 @@ expectProductionRefusal(
 
 expectProductionRefusal(
   'worker: refuses no-op mode in prod',
+  'apps/worker/src/main.ts',
+  { ...VALID_PROD_ENV, WORKER_MODE: 'noop' },
+  'production start refused',
+);
+
+expectProductionRefusal(
+  'worker: refuses missing queue in prod',
   'apps/worker/src/main.ts',
   { WORKER_QUEUE_URL: '' },
   'production start refused',

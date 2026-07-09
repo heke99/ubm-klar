@@ -1,21 +1,27 @@
+import { loadAppConfig, UnsafeProductionConfigError } from '@ubm-klar/config';
 import { createDefaultRegistry } from './handlers';
 import { workerHealth } from './jobs';
 
-const isProduction =
-  process.env.NODE_ENV === 'production' ||
-  ['stage', 'prod', 'production'].includes((process.env.APP_ENV ?? '').toLowerCase());
+const config = (() => {
+  try {
+    return loadAppConfig('worker');
+  } catch (error) {
+    if (error instanceof UnsafeProductionConfigError) {
+      console.error(`FATAL: ${error.message}`);
+      process.exit(1);
+    }
+    throw error;
+  }
+})();
 
-if (isProduction && !process.env.WORKER_QUEUE_URL) {
-  // Fail closed: without a persistent queue the worker would either exit
-  // immediately or acknowledge jobs it never performed. Neither is acceptable
-  // in production.
-  console.error(
-    'FATAL: production start refused — WORKER_QUEUE_URL is not set. ' +
-      'A no-op worker must never run in production.',
-  );
+if (config.isProductionLike && (config.worker.mode !== 'queue' || !config.queue.url)) {
+  // Defense in depth: loadAppConfig already forbids no-op workers and missing
+  // queues in stage/prod. A worker without a persistent queue would either
+  // exit immediately or acknowledge jobs it never performed.
+  console.error('FATAL: production start refused — no-op worker mode is forbidden.');
   process.exit(1);
 }
 
 const registry = createDefaultRegistry();
 console.info(JSON.stringify(workerHealth(registry, 0)));
-console.info('worker ready (queue adapter configured per deployment)');
+console.info(`worker ready (${config.mode}, queue provider: ${config.queue.provider})`);

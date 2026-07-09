@@ -142,6 +142,9 @@ importers:
       '@ubm-klar/access-control':
         specifier: workspace:*
         version: link:../../packages/access-control
+      '@ubm-klar/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@ubm-klar/economic-assistance-domain':
         specifier: workspace:*
         version: link:../../packages/economic-assistance-domain

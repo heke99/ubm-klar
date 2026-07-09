@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ubm-klar/access-control": "workspace:*",
+    "@ubm-klar/config": "workspace:*",
     "@ubm-klar/economic-assistance-domain": "workspace:*",
     "@ubm-klar/lss-domain": "workspace:*",
     "@ubm-klar/onboarding-engine": "workspace:*",
