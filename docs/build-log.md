@@ -51,7 +51,7 @@ security/compliance notes, and production-safety status.
   ubm_schema_versions_control, ubm_obligation_versions_control, release_channels,
   release_artifacts, migration_runs_no_pii).
 - **Tests:** 15 API tests incl. PII rejection, forbidden domains, secret-reference rejection.
-- **Security notes:** environments store publishable key *references* only; anything matching
+- **Security notes:** environments store publishable key _references_ only; anything matching
   service_role/secret is rejected with 400.
 - **Status:** production-safe (persistence adapter for Postgres wiring is deployment work).
 
@@ -679,3 +679,37 @@ security/compliance notes, and production-safety status.
   criteria mapping and pre-first-go-live hardening notes.
 - **Status:** release 1.0.0 production-safe; per-tenant go-live gated by the 14
   production readiness gates.
+
+---
+
+# Customer pilot hardening (Pilot Batches)
+
+The following batches harden the platform for a controlled customer pilot and real
+production. They supersede earlier "production-safe" labels where the audit
+(docs/audits/customer-pilot-readiness-audit.md) found demo/in-memory/placeholder
+runtime behaviour.
+
+## Pilot Batch 0 — Full repo audit and baseline
+
+- **Implemented:** complete repository audit against the customer-pilot readiness
+  criteria. Every demo/static/in-memory/placeholder runtime use is enumerated with
+  exact files, priorities (P0/P1/P2), required tests, and a go/no-go checklist in
+  `docs/audits/customer-pilot-readiness-audit.md`.
+- **Key findings:** in-memory control plane + audit/data-access sinks; empty tenant
+  directory; header-based auth; demo data served from API dashboards and all 18
+  force-static web pages; no-op worker (13/20 passthrough job types); no Postgres/
+  OIDC/queue/storage implementations anywhere; migration manifest drift
+  (`202607070002_control_plane_no_pii.sql` missing from release 1.0.0 manifest, so
+  `pnpm db:migrate:preflight` fails); unsigned release accepted; CI uses
+  `--frozen-lockfile=false`; secret scanner is git-only.
+- **Files:** `docs/audits/customer-pilot-readiness-audit.md`,
+  `docs/production-readiness-report.md` (status corrected), this log.
+- **Migrations:** none.
+- **Tests:** none (docs only, per batch definition).
+- **Commands run:** repo-wide static inspection only.
+- **Remaining work:** Pilot Batches 1–25.
+- **Env vars:** none.
+- **Security/compliance notes:** the audit corrects the earlier overstatement that
+  release 1.0.0 is production-safe; it is a well-tested domain layer with demo runtime
+  wiring, and must not be piloted with real data until P0 blockers are closed.
+- **Status:** needs hardening (baseline established; no production claims).
