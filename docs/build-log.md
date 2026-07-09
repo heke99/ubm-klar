@@ -1449,3 +1449,31 @@ error`) so pages render honest states without leaking backend details.
 - **Security notes:** matching writes person_search data access events with the
   notification as the recorded reason.
 - **Status:** production-safe.
+
+## Pilot Batch 18 — Reports, exports and customer value
+
+- **Implemented (`apps/api/src/report-routes.ts`):** 14 permission-gated reports
+  computed live from the tenant data plane: UBM-beredskap, öppna UBM-förfrågningar,
+  UBM-svarsfrister (SLA med dagar kvar/försenad), exportförslag per status,
+  blockerade exporter med skäl, LSS-betalningsrisker, EB-betalningsrisker,
+  kontrollärenden, datakvalitet, importfel, revisionsrapport, dataåtkomstrapport,
+  go-live-beredskap (pilot + produktion), pilotutfall. `GET /reports` (catalog) and
+  `GET /reports/:key?format=json|csv|xlsx` — CSV with proper escaping, XLSX via the
+  in-house writer (round-trip verified by our own reader). Every report run is
+  audited. Web: `/rapporter` (catalog), `/rapporter/[key]` (table view + export
+  links), export streamed through a route handler with auth/tenant forwarding.
+- **Files:** `apps/api/src/report-routes.ts`, `apps/api/src/server.ts`,
+  `apps/web/app/rapporter/{page.tsx,[key]/page.tsx,[key]/export/route.ts}`.
+- **Migrations:** none new.
+- **Tests:** 5 report tests on live Postgres: catalog lists 14 reports; risk report
+  runs on real data; CSV export headers + content correct; XLSX export parses with
+  our own reader (contains Pilot/Produktion rows); reports are permission-gated per
+  report (controller refused on the audit report, internal auditor allowed);
+  unknown report 404. 97 API tests green.
+- **Commands run:** full typecheck/test/lint/build/safety-check/format.
+- **Remaining:** PDF export postponed (print-friendly HTML tables + CSV/XLSX/JSON
+  cover the pilot; noted honestly).
+- **Env vars:** none new.
+- **Security notes:** reports never bypass the role model — rows are aggregates and
+  references; report generation itself is audit-logged.
+- **Status:** production-safe.
