@@ -133,10 +133,11 @@ describe.skipIf(!databaseUrl)('persistent audit and evidence chain', () => {
   });
 
   it('detects tampered events and shows a tamper warning', async () => {
-    // Insert a forged event whose content does not match its hash.
+    // Insert a forged event whose content does not match its hash. Backdated so
+    // no concurrent legitimate event chains onto the forged hash before cleanup.
     const forged = await db.query<{ id: string }>(
-      `insert into audit_events (event_key, action, outcome, previous_hash, event_hash)
-       values ('case.open', 'forged_action', 'success', null, repeat('0', 64)) returning id`,
+      `insert into audit_events (event_key, action, outcome, occurred_at, previous_hash, event_hash)
+       values ('case.open', 'forged_action', 'success', now() - interval '1 hour', null, repeat('0', 64)) returning id`,
     );
     try {
       const verify = await app.inject({

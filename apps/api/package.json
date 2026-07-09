@@ -42,6 +42,7 @@
     "fastify": "^5.2.0"
   },
   "devDependencies": {
+    "@ubm-klar/control-plane": "workspace:*",
     "jose": "^5.9.6",
     "vitest": "^3.2.6"
   }

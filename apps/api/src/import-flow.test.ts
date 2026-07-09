@@ -136,7 +136,8 @@ describe.skipIf(!databaseUrl)('import pipeline', () => {
   it('runs the full CSV flow: upload, map, preview, validate, commit', async () => {
     const pn1 = testPersonnummer(1);
     const pn2 = testPersonnummer(2);
-    const csv = `pnr;fornamn;efternamn\n${pn1};Anna;Testsson\n${pn2};Bo;Testsson\n`;
+    // unique per run: file-hash idempotency applies across historical runs
+    const csv = `pnr;fornamn;efternamn\n${pn1};Anna-${Date.now()};Testsson\n${pn2};Bo;Testsson\n`;
 
     const uploadResponse = await upload(`persons-${Date.now()}.csv`, csv, 'lss_persons');
     expect(uploadResponse.statusCode).toBe(201);

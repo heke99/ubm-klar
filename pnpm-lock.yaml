@@ -135,6 +135,9 @@ importers:
         specifier: ^5.2.0
         version: 5.10.0
     devDependencies:
+      '@ubm-klar/control-plane':
+        specifier: workspace:*
+        version: link:../control-plane
       jose:
         specifier: ^5.9.6
         version: 5.10.0

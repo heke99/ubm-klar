@@ -1650,3 +1650,43 @@ error`) so pages render honest states without leaking backend details.
 - **Remaining:** none.
 - **Env vars:** none new.
 - **Status:** production-safe.
+
+## Pilot Batch 24 — Test and verification suite
+
+- **Implemented:** `apps/api/src/e2e-pilot.test.ts` — a true end-to-end suite that
+  boots a REAL control plane over HTTP (admin + directory tokens), the API with the
+  `ControlPlaneTenantDirectory`, persistent audit, document vault and readiness
+  checks, against a live Postgres data plane. The 9 required flows:
+  1. Tenant provisioning + fail-closed resolution (421 before the tenant exists,
+     421 while the domain is unverified, resolution with publishable key after
+     verification, pilot approval propagates, `/ready` green).
+  2. Authentication/authorization (401 anonymous, 403 wrong role, 200 right role,
+     never demo data).
+  3. Controlled import: upload -> map -> validate -> commit with row-level lineage
+     verified in the database.
+  4. Payment control on the imported data: expired-decision payment flagged,
+     control case created and decided (payment_stopped).
+  5. UBM request end-to-end: registration, matched subject, proposal with real rows,
+     maker-checker (self-approval 422), packaging, hash-verified download, manual
+     sending, receipt, closure.
+  6. Document vault: classified upload with scanning, reason-gated open, verified
+     redaction, infected upload refused.
+  7. Notification intake -> match -> control case -> outcome.
+  8. Persistent audit: evidence chain verifies over everything the previous flows
+     wrote; audit + data access logs searchable.
+  9. Readiness gates: production blocked; waivers rejected without full
+     documentation and effective with it.
+     The suite runs in CI's database job (Postgres 16 service container) via the
+     existing `pnpm test` step with `DATA_PLANE_TEST_DATABASE_URL`. Test-data
+     hardening: unique per-run content to keep file-hash idempotency and chain
+     verification stable across repeated runs against a persistent test database.
+- **Files:** `apps/api/src/e2e-pilot.test.ts`,
+  `apps/control-plane/package.json` (exports for test reuse),
+  `apps/api/src/{import-flow,audit-persistence}.test.ts` (stability),
+  `apps/api/package.json`.
+- **Migrations:** none.
+- **Tests:** e2e 9/9 PASS; full API suite 118 tests PASS; whole workspace 40 tasks.
+- **Commands run:** full typecheck/test/lint/safety-check/format with live Postgres.
+- **Remaining:** none.
+- **Env vars:** none new.
+- **Status:** production-safe.
