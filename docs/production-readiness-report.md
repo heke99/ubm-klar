@@ -169,3 +169,16 @@ Closes P0-3 (in-memory control plane, no auth on control-plane routes).
   with `PiiLeakError` at the store layer; secret-looking key references rejected 400.
 - Production cannot use `InMemoryControlPlaneStore` (config validation + defense in
   depth in `main.ts`, probed by `production:safety-check`).
+
+## Pilot Batch 4 — tenant resolution (2026-07-09)
+
+Closes P0-4 (empty tenant directory).
+
+- `ControlPlaneTenantDirectory` wired into the API; scope-limited directory token.
+- Evidence: 21 tenant-resolver tests PASS (incl. 8 new directory tests). Live check
+  with control plane (Postgres) + API: verified domain resolved to safe config with
+  publishable key from env; unknown domain 421; forbidden authority-style domain 421;
+  unverified domain invisible (404 -> 421); demo tenant localhost-only. Failures are
+  never cached; positive lookups cached once per TTL (asserted by request counting).
+- No secret material can reach the frontend: `assertNoSecretMaterial` re-checks every
+  resolved config; a service-role-looking key aborts resolution.

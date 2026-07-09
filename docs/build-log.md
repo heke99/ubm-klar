@@ -840,3 +840,39 @@ runtime behaviour.
   schema); secret references rejected on environments and auth providers; directory
   endpoint never returns key values, only references.
 - **Status:** production-safe.
+
+## Pilot Batch 4 — Tenant resolution and data plane routing
+
+- **Implemented:** `ControlPlaneTenantDirectory`
+  (packages/tenant-resolver/src/control-plane-directory.ts) — HTTP client for the
+  control plane's `/directory/domains/:domain`, using a scope-limited
+  `CONTROL_PLANE_DIRECTORY_TOKEN` (directory reads only; the API never holds the admin
+  token). Publishable (non-secret) keys resolved from env by convention
+  `DATA_PLANE_PUBLISHABLE_KEY__{SLUG}__{ENV}`; control plane unreachable -> throws
+  (no fallback tenant, failures never cached). `apps/api/src/main.ts` wires the real
+  directory when `CONTROL_PLANE_URL` is set; prod refuses empty directory and demo
+  tenant (config + defense in depth). `TenantStatus` moved to shared-types;
+  `SafeTenantConfig`/`TenantDirectoryRecord` carry optional `tenantStatus` (drives the
+  pilot banner later). Resolver cache TTL now configurable from env. Web middleware
+  reviewed: stays as first-line pattern gate (fail-closed 421); authoritative
+  resolution stays server-side in the API.
+- **Files:** `packages/tenant-resolver/src/{control-plane-directory,resolver,index}.ts`,
+  `packages/shared-types/src/deployment.ts`, `apps/api/src/{main,server}.ts`,
+  `apps/control-plane/src/{server,main,types}.ts`.
+- **Migrations:** none.
+- **Tests:** 8 new directory tests (stub HTTP control plane): verified domain -> safe
+  config, unknown -> fail closed, unverified -> fail closed, wrong-domain record ->
+  `TenantConfigLeakError`, service-role-looking key -> rejected, positive lookups
+  cached once / failures re-checked every time, unreachable directory -> error.
+  Existing 13 resolver tests + API 421 tests still green.
+- **Commands run:** `pnpm --filter @ubm-klar/tenant-resolver test`, full
+  typecheck/test/lint (37 tasks), `pnpm production:safety-check` (13/13). Manual
+  end-to-end: control plane (Postgres) + API running together — verified domain
+  resolved with modules+publishable key; unknown and forbidden domains got 421;
+  localhost demo tenant worked in local mode.
+- **Remaining:** real auth (Batch 5), repositories (Batch 6).
+- **Env vars:** `CONTROL_PLANE_DIRECTORY_TOKEN`,
+  `DATA_PLANE_PUBLISHABLE_KEY__{SLUG}__{ENV}`.
+- **Security notes:** no secret values ever flow through the directory; the resolver
+  re-scans every config with `assertNoSecretMaterial` before handing it out.
+- **Status:** production-safe.
