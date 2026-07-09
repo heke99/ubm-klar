@@ -1419,3 +1419,33 @@ error`) so pages render honest states without leaking backend details.
 - **Security notes:** rule evaluation happens entirely server-side on the tenant
   data plane; case reads are access-logged with person references when present.
 - **Status:** production-safe.
+
+## Pilot Batch 17 — UBM notifications / incoming information
+
+- **Implemented (`apps/api/src/notification-routes.ts` + web pages):** manual
+  intake only — no faked official integration, and no transmit endpoint exists.
+  `POST /ubm/notifications` (register with metadata + classification),
+  `GET /ubm/notifications/:id` (detail with candidates + outcomes; reads are
+  access-logged; response explicitly states that outgoing reporting is manual),
+  `POST .../match` (person matching with confidence + basis; searches always in
+  the data access log; no-match -> manual_review), `POST .../create-case`
+  (control case from the notification, duplicate-protected),
+  `POST .../outcome` (recovery_claim/payment_stopped/no_action/police_report/
+  corrected_source_data/other_action), `POST .../close`. Statuses per the release
+  schema: received/matching/manual_review/matched/case_created/investigating/
+  outcome_registered/feedback_sent/closed. Web: `/underrattelser/new` +
+  `/underrattelser/[id]` with matching, case creation, outcome registration.
+- **Files:** `apps/api/src/notification-routes.ts`, `apps/api/src/server.ts`,
+  `apps/web/app/underrattelser/{new,[id]}/page.tsx`.
+- **Migrations:** none new.
+- **Tests:** 3 notification tests on live Postgres: full manual flow
+  (register -> no-match manual_review -> exact match with logged person search ->
+  control case (dup refused 409) -> outcome with "manual reporting" note -> close)
+  with the COMPLETE audit trail asserted; `/transmit` does not exist (404);
+  unauthorized roles 403. 92 API tests green.
+- **Commands run:** full typecheck/test/lint/build/safety-check/format.
+- **Remaining:** none for pilot; official feedback channel stays post-pilot.
+- **Env vars:** none new.
+- **Security notes:** matching writes person_search data access events with the
+  notification as the recorded reason.
+- **Status:** production-safe.
