@@ -22,6 +22,7 @@
     "@ubm-klar/data-quality-engine": "workspace:*",
     "@ubm-klar/economic-assistance-domain": "workspace:*",
     "@ubm-klar/evidence-chain": "workspace:*",
+    "@ubm-klar/import-engine": "workspace:*",
     "@ubm-klar/internal-secrecy": "workspace:*",
     "@ubm-klar/lss-domain": "workspace:*",
     "@ubm-klar/onboarding-engine": "workspace:*",

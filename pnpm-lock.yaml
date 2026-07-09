@@ -80,6 +80,9 @@ importers:
       '@ubm-klar/evidence-chain':
         specifier: workspace:*
         version: link:../../packages/evidence-chain
+      '@ubm-klar/import-engine':
+        specifier: workspace:*
+        version: link:../../packages/import-engine
       '@ubm-klar/internal-secrecy':
         specifier: workspace:*
         version: link:../../packages/internal-secrecy

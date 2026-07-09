@@ -28,6 +28,8 @@ export * from './export-proposal-repository';
 export * from './users-repository';
 
 export interface Repositories {
+  /** Raw data-plane client for flow modules (imports, exports) with multi-table transactions. */
+  db: DbClient;
   users: UsersRepository;
   lss: LssRepository;
   ea: EconomicAssistanceRepository;
@@ -45,6 +47,7 @@ export interface Repositories {
 
 export function createRepositories(db: DbClient): Repositories {
   return {
+    db,
     users: new UsersRepository(db),
     lss: new LssRepository(db),
     ea: new EconomicAssistanceRepository(db),

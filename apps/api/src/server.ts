@@ -50,6 +50,7 @@ import type { DataClass, SafeTenantConfig } from '@ubm-klar/shared-types';
 import { randomUUID } from 'node:crypto';
 import type { TenantDataPlanePool } from './data-plane';
 import { createRepositories, WaiverValidationError, type Repositories } from './repositories';
+import { registerImportRoutes } from './import-routes';
 
 /**
  * UBM Klar backend API. All sensitive operations run here, server-side:
@@ -341,11 +342,11 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
     });
     if (!decision.allowed) {
       void auditLogger.record({
-        eventKey: 'case.open',
+        eventKey: 'authorization.denied',
         actorUserId: request.subject.userId,
         action: `denied:${permission}`,
         outcome: 'denied',
-        context: { reasons: decision.reasons },
+        context: { reasons: decision.reasons, correlationId: request.correlationId },
       });
       reply.status(403).send({
         error: 'forbidden',
@@ -537,7 +538,7 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
       verifiedBy: profileId,
     });
     await auditLogger.record({
-      eventKey: 'case.open',
+      eventKey: 'readiness.gate_changed',
       actorUserId: request.subject!.userId,
       action: `readiness_gate_${request.body.status}`,
       context: { gateKey: request.params.gateKey, correlationId: request.correlationId },
@@ -569,7 +570,7 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
       throw error;
     }
     await auditLogger.record({
-      eventKey: 'case.open',
+      eventKey: 'readiness.gate_changed',
       actorUserId: request.subject!.userId,
       action: 'readiness_gate_waived',
       reason: request.body.reason,
@@ -626,6 +627,14 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
     if (!request.repositories) return { dataSource: 'empty', batches: [] };
     const batches = await request.repositories.importBatches.list(100);
     return { dataSource: 'data_plane', batches };
+  });
+
+  registerImportRoutes(app, {
+    auditLogger,
+    accessLogger,
+    requirePermission: (request, reply, permission) =>
+      requirePermission(request, reply, permission, { kind: 'import_batch' }),
+    demoAllowed: (request) => demoAllowed(request.tenant),
   });
 
   app.get('/documents', async (request, reply) => {
