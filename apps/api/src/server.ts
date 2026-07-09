@@ -54,6 +54,7 @@ import { registerImportRoutes } from './import-routes';
 import { registerUbmRoutes } from './ubm-routes';
 import { registerExportRoutes } from './export-routes';
 import { registerDocumentRoutes } from './document-routes';
+import { registerControlCaseRoutes } from './control-case-routes';
 import {
   createTenantLoggers,
   type AccessRecorder,
@@ -761,6 +762,11 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
   registerExportRoutes(app, {
     requirePermission: (request, reply, permission) =>
       requirePermission(request, reply, permission, { kind: 'ubm_export_proposal' }),
+  });
+
+  registerControlCaseRoutes(app, {
+    requirePermission: (request, reply, permission) =>
+      requirePermission(request, reply, permission, { kind: 'control_cases' }),
   });
 
   registerDocumentRoutes(app, {

@@ -354,6 +354,55 @@ async function persistFlags(
   return created;
 }
 
+/** High/critical open flags become control cases (idempotent per flag). */
+export async function createControlCasesFromFlags(
+  db: DbClient,
+  domain: 'lss' | 'economic_assistance',
+): Promise<number> {
+  const highFlags = await db.query<{
+    id: string;
+    severity: string;
+    explanation: string;
+    person_id: string | null;
+    amount_at_risk_sek: string | null;
+  }>(
+    `select id, severity, explanation, person_id, amount_at_risk_sek
+     from risk_flags
+     where domain = $1 and severity in ('high','critical')
+       and status = 'open' and control_case_id is null and dry_run = false
+     limit 200`,
+    [domain],
+  );
+  let created = 0;
+  for (const flag of highFlags.rows) {
+    const caseNumber = `KA-${new Date().getFullYear()}-${flag.id.slice(0, 8).toUpperCase()}`;
+    const controlCase = await db.query<{ id: string }>(
+      `insert into control_cases
+         (case_number, source_kind, source_reference, domain, title, severity, status, person_id, amount_at_risk_sek)
+       values ($1, 'risk_flag', $2, $3, $4, $5, 'open', $6::uuid, $7)
+       on conflict (case_number) do nothing
+       returning id`,
+      [
+        caseNumber,
+        flag.id,
+        domain,
+        flag.explanation.slice(0, 200),
+        flag.severity,
+        flag.person_id,
+        flag.amount_at_risk_sek,
+      ],
+    );
+    if (controlCase.rows[0]) {
+      await db.query(
+        `update risk_flags set control_case_id = $2::uuid, status = 'under_review' where id = $1::uuid`,
+        [flag.id, controlCase.rows[0].id],
+      );
+      created++;
+    }
+  }
+  return created;
+}
+
 export async function runPaymentControlRules(
   db: DbClient,
   domain: 'lss' | 'economic_assistance',

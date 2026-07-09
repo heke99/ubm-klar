@@ -1,5 +1,5 @@
 import type { DbClient } from '@ubm-klar/db';
-import { runPaymentControlRules } from '@ubm-klar/rule-run';
+import { createControlCasesFromFlags, runPaymentControlRules } from '@ubm-klar/rule-run';
 import { JobRegistry, type WorkerJobType } from './jobs';
 
 /**
@@ -163,50 +163,7 @@ export function createDefaultRegistry(context: HandlerContext = {}): JobRegistry
       job.payloadReference === 'economic_assistance' ? 'economic_assistance' : 'lss'
     ) as 'lss' | 'economic_assistance';
     const result = await runPaymentControlRules(db!, domain);
-
-    // High/critical flags become control cases (idempotent per flag).
-    const highFlags = await db!.query<{
-      id: string;
-      rule_key: string;
-      severity: string;
-      explanation: string;
-      person_id: string | null;
-      amount_at_risk_sek: string | null;
-    }>(
-      `select id, rule_key, severity, explanation, person_id, amount_at_risk_sek
-       from risk_flags
-       where domain = $1 and severity in ('high','critical')
-         and status = 'open' and control_case_id is null and dry_run = false
-       limit 200`,
-      [domain],
-    );
-    let casesCreated = 0;
-    for (const flag of highFlags.rows) {
-      const caseNumber = `KA-${new Date().getFullYear()}-${flag.id.slice(0, 8).toUpperCase()}`;
-      const controlCase = await db!.query<{ id: string }>(
-        `insert into control_cases
-           (case_number, source_kind, source_reference, domain, title, severity, status, person_id, amount_at_risk_sek)
-         values ($1, 'risk_flag', $2, $3, $4, $5, 'open', $6::uuid, $7)
-         on conflict (case_number) do nothing
-         returning id`,
-        [
-          caseNumber,
-          flag.id,
-          domain,
-          flag.explanation.slice(0, 200),
-          flag.severity,
-          flag.person_id,
-          flag.amount_at_risk_sek,
-        ],
-      );
-      if (controlCase.rows[0]) {
-        await db!.query(
-          `update risk_flags set control_case_id = $2::uuid, status = 'under_review' where id = $1::uuid`,
-          [flag.id, controlCase.rows[0].id],
-        );
-        casesCreated++;
-      }
-    }
+    const casesCreated = await createControlCasesFromFlags(db!, domain);
     return {
       jobId: job.id,
       status: 'succeeded',

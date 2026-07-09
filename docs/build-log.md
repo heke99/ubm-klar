@@ -1383,3 +1383,39 @@ error`) so pages render honest states without leaking backend details.
 - **Security notes:** job summaries pass the no-PII scanner before leaving the
   worker; production refuses to start without a persistent queue.
 - **Status:** production-safe.
+
+## Pilot Batch 16 — Payment control and control cases
+
+- **Implemented:**
+  - `createControlCasesFromFlags` in `@ubm-klar/rule-run` (shared by API + worker):
+    open high/critical risk flags become control cases idempotently; flags link to
+    their case and move to under_review.
+  - API (`apps/api/src/control-case-routes.ts`): `POST /payment-control/run`
+    (runs the 25 LSS or 25 EA rules over the tenant's REAL imported data, persists
+    deduplicated flags, creates cases; dry-run supported; audited),
+    `GET /control-cases/:id` (detail with triggering flags, notes, full event trail;
+    case opens are data-access-logged), `POST .../assign`, `POST .../notes`,
+    `POST .../transition` (investigating/awaiting_decision/closed/reopened),
+    `POST .../outcome` (payment_stopped/recovery_claim/police_report/
+    corrected_source_data/no_action/other_action — requires `case.control.decide`).
+    Every action writes both a case event row and a persistent audit event.
+  - Web: `/kontrollarenden/[id]` (flags, event chain, notes, assign/status/outcome
+    actions) and a "Kör riskregler" runner on `/betalningskontroll` (sharp or dry
+    run).
+- **Files:** `packages/rule-run/src/rule-run.ts`, `apps/api/src/control-case-routes.ts`,
+  `apps/api/src/server.ts`, `apps/worker/src/handlers.ts` (shared helper),
+  `apps/web/app/kontrollarenden/[id]/page.tsx`,
+  `apps/web/app/betalningskontroll/page.tsx`.
+- **Migrations:** none new.
+- **Tests:** 5 payment-control tests on live Postgres: a seeded expired-decision
+  payment (imported-data scenario) IS flagged by the rule run and becomes a control
+  case; rule runs are idempotent (no duplicate open flags); dashboard returns real
+  case counts; the full case workflow (assign -> note -> investigating -> outcome
+  payment_stopped) leaves a complete event trail AND persistent audit events;
+  read-only roles are refused (403). 89 API tests green.
+- **Commands run:** full typecheck/test/lint/build/safety-check/format.
+- **Remaining:** none for pilot.
+- **Env vars:** none new.
+- **Security notes:** rule evaluation happens entirely server-side on the tenant
+  data plane; case reads are access-logged with person references when present.
+- **Status:** production-safe.

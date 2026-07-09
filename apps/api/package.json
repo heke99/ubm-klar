@@ -20,6 +20,7 @@
     "@ubm-klar/db": "workspace:*",
     "@ubm-klar/document-vault": "workspace:*",
     "@ubm-klar/redaction-engine": "workspace:*",
+    "@ubm-klar/rule-run": "workspace:*",
     "@ubm-klar/data-lineage": "workspace:*",
     "@ubm-klar/data-quality-engine": "workspace:*",
     "@ubm-klar/economic-assistance-domain": "workspace:*",

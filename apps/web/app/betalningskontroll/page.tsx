@@ -1,9 +1,19 @@
+import { redirect } from 'next/navigation';
 import { Card, StatGrid, StatusBadge } from '../../design-system/components';
-import { apiGet } from '../../lib/api';
+import { apiGet, apiSend } from '../../lib/api';
 import { requireSession } from '../../lib/require-session';
 import { ApiStateGuard, NoDataYet } from '../../components/page-states';
 
 export const dynamic = 'force-dynamic';
+
+async function runRulesAction(formData: FormData) {
+  'use server';
+  await apiSend('POST', '/payment-control/run', {
+    domain: String(formData.get('domain') ?? 'lss'),
+    dryRun: formData.get('dryRun') === 'true',
+  });
+  redirect('/betalningskontroll');
+}
 
 interface PaymentControlResponse {
   dataSource: string;
@@ -39,8 +49,27 @@ export default async function BetalningskontrollPage() {
       <h1>Betalningskontroll</h1>
       <p>
         Riskregler körs mot kommunens importerade utbetalningsdata. Flaggor med hög eller kritisk
-        allvarlighetsgrad kan bli kontrollärenden.
+        allvarlighetsgrad blir kontrollärenden automatiskt.
       </p>
+      <Card title="Kör riskregler">
+        <form action={runRulesAction} style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
+          <label>
+            Område{' '}
+            <select name="domain">
+              <option value="lss">LSS (25 regler)</option>
+              <option value="economic_assistance">Ekonomiskt bistånd (25 regler)</option>
+            </select>
+          </label>
+          <label>
+            Läge{' '}
+            <select name="dryRun">
+              <option value="false">Skarp körning (skapar flaggor + ärenden)</option>
+              <option value="true">Testkörning (dry run)</option>
+            </select>
+          </label>
+          <button type="submit">Kör regler nu</button>
+        </form>
+      </Card>
       <ApiStateGuard result={result} />
       {result.kind === 'ok' ? (
         result.data.flags.length === 0 ? (

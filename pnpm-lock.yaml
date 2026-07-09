@@ -110,6 +110,9 @@ importers:
       '@ubm-klar/rule-engine':
         specifier: workspace:*
         version: link:../../packages/rule-engine
+      '@ubm-klar/rule-run':
+        specifier: workspace:*
+        version: link:../../packages/rule-run
       '@ubm-klar/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
