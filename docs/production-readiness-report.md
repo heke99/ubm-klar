@@ -142,3 +142,17 @@ Notes:
   vite dev server), not shipped to production runtimes.
 - The repository release `1.0.0` remains UNSIGNED on disk, which is valid for
   local/demo/test only; stage/prod pipelines must sign with the vendor release key.
+
+## Pilot Batch 2 — environment validation (2026-07-09)
+
+Closes P0-12 (missing env validation). Progresses P0-3/4/5/10/11 by making the unsafe
+providers unreachable in stage/prod at startup.
+
+- `loadAppConfig(app)` in `@ubm-klar/config`: 5 modes, per-app requirement matrix,
+  forbidden-provider list, `UnsafeProductionConfigError` aborts startup.
+- All four apps validate configuration before serving; web validates via
+  `instrumentation.ts` at server start.
+- Evidence: 24 new config tests PASS; `pnpm production:safety-check` now 13/13 PASS
+  including: prod refuses demo data, demo tenant, disabled-local scanner, header auth
+  without trusted proxy, no-op worker, missing queue, official UBM transport flag.
+- Local development remains zero-config (verified by `loadAppConfig('api', {})`).

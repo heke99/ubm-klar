@@ -765,3 +765,40 @@ runtime behaviour.
 - **Security notes:** no unsigned release can pass preflight/apply in stage/prod; CI
   dependency audit now blocks on high/critical.
 - **Status:** production-safe for the release pipeline; apps still need Batches 2+.
+
+## Pilot Batch 2 — Environment validation and production fail-closed mode
+
+- **Implemented:** `packages/config/src/app-config.ts` — typed `AppConfig` with five
+  environment modes (local/demo/test/stage/prod via `APP_ENV`, `NODE_ENV` fallback).
+  stage/prod require: APP_BASE_URL, API_BASE_URL, CONTROL_PLANE_DATABASE_URL or
+  CONTROL_PLANE_URL, fail-closed tenant resolver, auth provider config (issuer +
+  client id for entra/oidc/saml), SESSION_SECRET (web), DATA_PLANE_SERVICE_KEY_SOURCE,
+  document storage + malware scanner providers, postgres audit/data-access sinks,
+  queue provider + WORKER_QUEUE_URL, RELEASE_SIGNING_PUBLIC_KEY, BACKUP_PROVIDER.
+  stage/prod forbid: `local_demo_shared`, demo data, demo tenant, in-memory
+  control-plane/audit/data-access/queue, `disabled-local` scanner, local document
+  storage, `supabase_auth` as primary auth, header auth without
+  INTERNAL_AUTH_PROXY_TRUSTED + secret, `WORKER_MODE=noop`.
+  `UBM_OFFICIAL_TRANSPORT` must stay `disabled` in every mode. All four apps consume
+  the loader at startup (`apps/*/src/main.ts`, `apps/web/instrumentation.ts`) and exit
+  on `UnsafeProductionConfigError`. `.env.example` rewritten with local/demo and
+  stage/prod sections and [MANDATORY stage/prod] markers.
+- **Files:** `packages/config/src/app-config.ts` (+ index export), four app entry
+  points, `apps/web/instrumentation.ts`, `.env.example`,
+  `scripts/production-safety-check.mjs` (now 13 checks).
+- **Migrations:** none.
+- **Tests:** `packages/config/src/app-config.test.ts` — 24 tests covering valid prod
+  env, every forbidden provider, missing env reporting, mode aliases, official
+  transport lockout; full suite green (36 tasks).
+- **Commands run:** `pnpm --filter @ubm-klar/config test`, `pnpm typecheck`,
+  `pnpm lint`, `pnpm test`, `pnpm production:safety-check` (13/13 PASS).
+- **Remaining:** wire real providers behind the config (Batches 3–15).
+- **Env vars:** documented in `.env.example`; new: APP_ENV, CONTROL_PLANE_STORE,
+  CONTROL_PLANE_ADMIN_TOKEN, AUTH_PROVIDER/AUTH_ISSUER/AUTH_CLIENT_ID/AUTH_AUDIENCE/
+  AUTH_JWKS_URI/AUTH_CLIENT_SECRET, SESSION_SECRET, INTERNAL_AUTH_PROXY_TRUSTED/SECRET,
+  DATA_PLANE_SERVICE_KEY_SOURCE, DATA_PLANE_DATABASE_URL, AUDIT_SINK, DATA_ACCESS_SINK,
+  QUEUE_PROVIDER, WORKER_MODE, BACKUP_PROVIDER, UBM_OFFICIAL_TRANSPORT,
+  DOCUMENT_MAX_UPLOAD_BYTES.
+- **Security notes:** apps refuse unsafe production startup before binding a port;
+  local development needs no env vars at all.
+- **Status:** production-safe (fail-closed validation active in all apps).
