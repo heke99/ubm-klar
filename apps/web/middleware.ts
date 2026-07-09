@@ -30,5 +30,6 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  // /health is exempt: infrastructure probes have no tenant Host header.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|health).*)'],
 };

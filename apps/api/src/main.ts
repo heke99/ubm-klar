@@ -118,6 +118,101 @@ function buildScanner(): MalwareScanner {
   return new DisabledMalwareScanner();
 }
 
+function buildReadinessChecks(): import('./readiness').ReadinessCheck[] {
+  const checks: import('./readiness').ReadinessCheck[] = [];
+  if (config.controlPlane.url) {
+    checks.push({
+      name: 'control_plane',
+      required: true,
+      run: async () => {
+        const response = await fetch(`${config.controlPlane.url}/health`, {
+          signal: AbortSignal.timeout(5000),
+        });
+        return { ok: response.ok };
+      },
+    });
+  }
+  if (process.env.DATA_PLANE_DATABASE_URL) {
+    checks.push({
+      name: 'data_plane_database',
+      required: true,
+      run: async () => {
+        const { createDbClient } = await import('@ubm-klar/db');
+        const db = createDbClient({
+          connectionString: process.env.DATA_PLANE_DATABASE_URL!,
+          applicationName: 'api-readiness',
+          max: 1,
+        });
+        try {
+          const migrations = await db.query<{ count: string }>(
+            'select count(*) as count from schema_migrations',
+          );
+          return {
+            ok: Number(migrations.rows[0]?.count ?? 0) > 0,
+            detail: `migrations: ${migrations.rows[0]?.count ?? 0}`,
+          };
+        } finally {
+          await db.end();
+        }
+      },
+    });
+  }
+  checks.push({
+    name: 'auth_configuration',
+    required: config.isProductionLike,
+    run: async () => ({
+      ok: !config.isProductionLike || Boolean(config.auth.issuer && config.auth.clientId),
+    }),
+  });
+  checks.push({
+    name: 'tenant_resolver',
+    required: config.isProductionLike,
+    run: async () => ({ ok: config.tenantResolver.failClosed }),
+  });
+  checks.push({
+    name: 'release_signature',
+    required: config.isProductionLike,
+    run: async () => ({
+      ok: !config.isProductionLike || config.release.signingPublicKeyConfigured,
+    }),
+  });
+  checks.push({
+    name: 'malware_scanner',
+    required: config.isProductionLike,
+    run: async () => ({
+      ok: !config.isProductionLike || config.documents.malwareScannerProvider !== 'disabled-local',
+    }),
+  });
+  checks.push({
+    name: 'document_storage',
+    required: config.isProductionLike,
+    run: async () => ({
+      ok: !config.isProductionLike || config.documents.storageProvider !== 'local',
+    }),
+  });
+  if (config.queue.url) {
+    checks.push({
+      name: 'job_queue',
+      required: config.isProductionLike,
+      run: async () => {
+        const { createDbClient } = await import('@ubm-klar/db');
+        const db = createDbClient({
+          connectionString: config.queue.url!,
+          applicationName: 'api-readiness-queue',
+          max: 1,
+        });
+        try {
+          await db.query('select 1');
+          return { ok: true };
+        } finally {
+          await db.end();
+        }
+      },
+    });
+  }
+  return checks;
+}
+
 const port = Number(process.env.API_PORT ?? 3001);
 const app = buildApiServer({
   directory: selectDirectory(),
@@ -136,6 +231,7 @@ const app = buildApiServer({
   // without a persistent tenant data plane are refused.
   requirePersistentAudit: config.isProductionLike || config.audit.sink === 'postgres',
   isProductionLike: config.isProductionLike,
+  readinessChecks: buildReadinessChecks(),
 });
 
 app.listen({ port, host: '0.0.0.0' }).then(() => {

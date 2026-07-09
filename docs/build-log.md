@@ -1556,3 +1556,37 @@ error`) so pages render honest states without leaking backend details.
   allowance documented).
 - **Env vars:** none new.
 - **Status:** production-safe.
+
+## Pilot Batch 21 — Operational readiness
+
+- **Implemented:**
+  - `/ready` on every service with real dependency checks: API (control plane
+    reachability, data-plane DB connectivity + migrations applied, auth config,
+    fail-closed resolver, release signature key, scanner/storage providers, job
+    queue — required checks fail closed with 503 and the failing check named,
+    never stack traces), control plane (store round-trip), worker (queue + data
+    plane), web `/health` (middleware-exempt for infrastructure probes).
+  - `docs/runbooks/backup-restore-runbook.md`: backup requirements as go-live
+    gates (`backup_tested`/`restore_tested`), full restore-test checklist
+    producing gate evidence (smoke + RLS + chain verification against the
+    restored copy, RTO measurement, evidence registration via the gates API).
+  - `docs/runbooks/customer-pilot-go-live.md`: step-by-step pilot go-live incl.
+    kill-switch/rollback (domain unverify -> 421, tenant suspend, PITR restore,
+    feature flags).
+  - `docs/deployment/monitoring.md` updated: all health/readiness endpoints,
+    monitored signals (dead-letter, 5xx + correlation ids, audit-chain
+    verification alarm, 429 counts), alert routing, rollback notes.
+  - Incident process: existing `docs/incident-response/incident-process.md`
+    remains authoritative; pilot contacts are fixed via the
+    `incident_contact_runbook` gate.
+- **Files:** `apps/api/src/{readiness,server,main}.ts`, `apps/worker/src/main.ts`,
+  `apps/control-plane/src/server.ts`, `apps/web/app/health/route.ts`,
+  `apps/web/middleware.ts`, `docs/runbooks/*`, `docs/deployment/monitoring.md`.
+- **Migrations:** none new.
+- **Tests:** 3 readiness tests (ready with required checks green + optional
+  failures tolerated; 503 with the failing check named; thrown checks fail
+  without stack frames). 109 API tests green.
+- **Commands run:** full typecheck/test/lint/build/safety-check/format.
+- **Remaining:** none for pilot.
+- **Env vars:** none new.
+- **Status:** production-safe.

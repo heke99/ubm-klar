@@ -60,6 +60,7 @@ import { registerReportRoutes } from './report-routes';
 import { registerAdminRoutes } from './admin-routes';
 import { registerRateLimiter, registerSafeErrorHandler, registerSecurityHeaders } from './security';
 import { registerRetentionRoutes } from './retention-routes';
+import { registerReadiness, type ReadinessCheck } from './readiness';
 import {
   createTenantLoggers,
   type AccessRecorder,
@@ -125,6 +126,8 @@ export interface ApiServerOptions {
   isProductionLike?: boolean;
   /** Rate limiting on by default; only tests may disable it. */
   disableRateLimiting?: boolean;
+  /** Dependency checks exposed on /ready (wired by main.ts per deployment). */
+  readinessChecks?: ReadinessCheck[];
   /**
    * Whether synthetic demo data may be served at all (environment-level gate;
    * loadAppConfig forbids this in stage/prod). The tenant must ALSO opt in via
@@ -316,7 +319,7 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
       typeof incoming === 'string' && /^[0-9a-f-]{8,64}$/i.test(incoming) ? incoming : randomUUID();
     reply.header('x-correlation-id', request.correlationId);
 
-    if (request.url === '/health') return;
+    if (request.url === '/health' || request.url === '/ready') return;
     const host = request.headers.host ?? '';
     if (options.allowDemoTenant && /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host)) {
       request.tenant = DEMO_TENANT;
@@ -427,6 +430,7 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
   }
 
   app.get('/health', async () => ({ service: 'api', status: 'ok', piiSafe: true }));
+  registerReadiness(app, options.readinessChecks ?? []);
 
   app.get('/tenant', async (request) => ({
     municipality: request.tenant?.municipalityName,

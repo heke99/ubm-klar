@@ -118,6 +118,31 @@ const server = createServer(async (request, response) => {
     }
     return;
   }
+  if (request.url === '/ready') {
+    try {
+      await queue.stats();
+      if (dataPlane) await dataPlane.query('select 1');
+      response.writeHead(200, { 'content-type': 'application/json' });
+      response.end(
+        JSON.stringify({
+          ready: true,
+          checks: [
+            { name: 'queue', ok: true },
+            { name: 'data_plane', ok: Boolean(dataPlane) },
+          ],
+        }),
+      );
+    } catch (error) {
+      response.writeHead(503, { 'content-type': 'application/json' });
+      response.end(
+        JSON.stringify({
+          ready: false,
+          detail: error instanceof Error ? error.message.slice(0, 120) : 'dependency failed',
+        }),
+      );
+    }
+    return;
+  }
   response.writeHead(404, { 'content-type': 'application/json' });
   response.end(JSON.stringify({ error: 'not_found' }));
 });

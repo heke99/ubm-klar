@@ -94,6 +94,16 @@ export function buildControlPlaneServer(options: ControlPlaneServerOptions): Fas
 
   app.get('/health', async () => ({ service: 'control-plane', status: 'ok', piiSafe: true }));
 
+  app.get('/ready', async (_request, reply) => {
+    try {
+      // The store must answer (Postgres round-trip for the persistent store).
+      await store.listTenants();
+      return { ready: true, checks: [{ name: 'store', ok: true }] };
+    } catch {
+      return reply.status(503).send({ ready: false, checks: [{ name: 'store', ok: false }] });
+    }
+  });
+
   app.post<{
     Body: {
       slug: string;
