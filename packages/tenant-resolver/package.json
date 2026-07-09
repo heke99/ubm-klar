@@ -17,6 +17,6 @@
     "@ubm-klar/shared-types": "workspace:*"
   },
   "devDependencies": {
-    "vitest": "^2.1.8"
+    "vitest": "^3.2.6"
   }
 }

@@ -25,8 +25,11 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - name: Install
-        run: pnpm install --frozen-lockfile=false
+      - name: Install (strict lockfile)
+        run: pnpm install --frozen-lockfile=true
+
+      - name: Format check
+        run: pnpm format:check
 
       - name: Typecheck
         run: pnpm typecheck
@@ -37,5 +40,86 @@ jobs:
       - name: Test
         run: pnpm test
 
-      - name: Secret scan placeholder
+      - name: Secret scan
         run: pnpm security:secrets
+
+      - name: Dependency audit (high/critical blocks)
+        run: pnpm security:deps
+
+      - name: Migration preflight
+        run: pnpm db:migrate:preflight
+
+      - name: Production safety check
+        run: pnpm production:safety-check
+
+  database:
+    name: Database checks
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ubm
+          POSTGRES_PASSWORD: ubm
+          POSTGRES_DB: ubm_dataplane
+        ports:
+          - 54322:5432
+        options: >-
+          --health-cmd="pg_isready -U ubm"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.3
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install (strict lockfile)
+        run: pnpm install --frozen-lockfile=true
+
+      - name: Migration dry-run
+        run: pnpm db:migrate:dry-run -- --db postgresql://ubm:ubm@localhost:54322/ubm_dataplane
+
+      - name: Migration apply
+        run: node scripts/release-runner.mjs apply --release 1.0.0 --db postgresql://ubm:ubm@localhost:54322/ubm_dataplane
+
+      - name: Smoke tests
+        run: pnpm db:smoke-test -- --db postgresql://ubm:ubm@localhost:54322/ubm_dataplane
+
+      - name: RLS tests
+        run: pnpm db:rls-test -- --db postgresql://ubm:ubm@localhost:54322/ubm_dataplane
+
+  dependency-report:
+    name: Dependency report (non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.3
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install (strict lockfile)
+        run: pnpm install --frozen-lockfile=true
+
+      - name: Full audit report (all severities, informational)
+        run: pnpm security:deps:report
