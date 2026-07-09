@@ -28,6 +28,8 @@ const DOC_MIME_TYPES = [
   'image/jpeg',
   'image/tiff',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  // Text documents: needed for the pilot's automatic redaction flow.
+  'text/plain',
 ];
 
 const MB = 1024 * 1024;
@@ -71,7 +73,7 @@ export const BUCKET_POLICIES: Record<BucketKey, BucketPolicy> = {
     readRoles: ['ubm_export_manager', 'lawyer', 'dpo', 'control_investigator'],
     writeRoles: ['ubm_export_manager', 'lawyer'],
     exportRequiresApproval: true,
-    allowedMimeTypes: ['application/pdf'],
+    allowedMimeTypes: ['application/pdf', 'text/plain'],
     maxFileSizeBytes: 50 * MB,
   },
   'ubm-exports': {

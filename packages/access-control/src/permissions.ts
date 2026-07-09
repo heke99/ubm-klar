@@ -113,6 +113,7 @@ export const ROLE_PERMISSIONS: Record<RoleId, readonly PermissionKey[]> = {
     'case.lss.read',
     'case.lss.write',
     'document.read',
+    'document.download',
   ],
   economic_assistance_case_worker: [
     'person.read',
@@ -121,6 +122,7 @@ export const ROLE_PERMISSIONS: Record<RoleId, readonly PermissionKey[]> = {
     'case.ea.read',
     'case.ea.write',
     'document.read',
+    'document.download',
   ],
   controller: [
     'person.read',
@@ -139,6 +141,8 @@ export const ROLE_PERMISSIONS: Record<RoleId, readonly PermissionKey[]> = {
     'public_record.handle',
     'case.control.read',
     'document.read',
+    'document.download',
+    'document.redact',
   ],
   dpo: ['dpo.review', 'audit.read', 'access_log.read', 'ubm.proposal.review'],
   information_security_officer: ['audit.read', 'access_log.read', 'readiness.manage'],

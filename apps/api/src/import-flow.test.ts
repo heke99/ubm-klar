@@ -220,7 +220,7 @@ describe.skipIf(!databaseUrl)('import pipeline', () => {
 
   it('is idempotent: the same file cannot be imported twice', async () => {
     const pn = testPersonnummer(3);
-    const csv = `personnummer\n${pn}\n`;
+    const csv = `personnummer;referens\n${pn};idem-${Date.now()}\n`;
     const fileName = `idempotent-${Date.now()}.csv`;
 
     const first = await upload(fileName, csv, 'lss_persons');
@@ -246,7 +246,8 @@ describe.skipIf(!databaseUrl)('import pipeline', () => {
   });
 
   it('can be rolled back before commit', async () => {
-    const csv = `personnummer\n${testPersonnummer(4)}\n`;
+    // unique content per run: file-hash idempotency applies across historical runs
+    const csv = `personnummer;referens\n${testPersonnummer(4)};rb-${Date.now()}\n`;
     const uploadResponse = await upload(`rollback-${Date.now()}.csv`, csv, 'lss_persons');
     const batchId = uploadResponse.json().batchId;
 

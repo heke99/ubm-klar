@@ -1197,3 +1197,58 @@ error`) so pages render honest states without leaking backend details.
   proposal rows created under eligibility control are included; blocked proposals
   cannot package); every download is audited and access-logged.
 - **Status:** production-safe.
+
+## Pilot Batch 12 — Document vault and redaction
+
+- **Implemented:**
+  - Real storage adapters (`packages/document-vault/src/storage.ts`):
+    `LocalFileStorage` (dev/test only — forbidden in stage/prod by config),
+    `SupabaseStorageAdapter` (Storage HTTP API, service key server-side,
+    provider-managed encryption at rest), `S3CompatibleStorage` (full AWS SigV4
+    signing, per-object SSE AES256 — works with AWS/MinIO/municipal object storage).
+    Path-traversal-safe paths on all adapters.
+  - Real scanners: `ClamAvScanner` (clamd zINSTREAM over TCP) and
+    `ExternalApiScanner`; `DisabledMalwareScanner` remains local-only.
+  - API (`apps/api/src/document-routes.ts`): `POST /documents` (bucket policy
+    validation: mime allowlist + magic bytes + size caps; mandatory scan — infected
+    files are refused and never stored; prod also refuses when the scanner is
+    disabled or failing), `GET /documents/:id`, `POST /documents/:id/open`
+    (sensitive classes — sensitive/medical/protected_identity/children — REQUIRE a
+    reason; every open writes a data access event with class-specific access kind +
+    `document_access_events` + audit), redaction workflow:
+    `POST .../redaction/plan` (plan persisted in `document_redaction_jobs`,
+    match preview) and `POST .../redaction/apply` (applies the redaction engine,
+    VERIFIES no sensitive patterns survive — otherwise nothing is stored — and saves
+    the redacted copy as a separate document in `documents-redacted` with
+    `is_redacted_version` + link to the original). Automatic redaction of non-text
+    formats honestly returns NOT_IMPLEMENTED (manual redaction + upload instead).
+  - `main.ts` wires storage/scanner from env
+    (DOCUMENT_STORAGE__/MALWARE_SCANNER__).
+  - Role matrix: case workers got `document.download`; lawyers got
+    `document.download` + `document.redact`.
+  - Web: upload form on `/dokument` (bucket/type/classification),
+    `/dokument/[id]` detail with reason-gated open and the redaction workflow,
+    open/download proxied through a route handler.
+- **Files:** `packages/document-vault/src/{storage,buckets,index}.ts`,
+  `apps/api/src/{document-routes,server,main}.ts`,
+  `packages/access-control/src/permissions.ts`,
+  `apps/web/app/dokument/{page.tsx,[id]/page.tsx,[id]/open/route.ts}`.
+- **Migrations:** none new (uses documents/document_access_events/
+  document_redaction_jobs from release 1.0.0).
+- **Tests:** 6 document flow tests on live Postgres + local storage: clean upload
+  persists with verdict + hash; infected upload refused and not stored; bucket
+  policy violations 422; sensitive open requires reason (422 without, content with);
+  full redaction workflow (plan -> apply -> verified separate copy in
+  documents-redacted containing no personnummer); non-text redaction
+  NOT_IMPLEMENTED. 77 API tests green.
+- **Commands run:** full typecheck/test/lint/build/safety-check/format.
+- **Remaining:** storage adapters verified against live Supabase/S3 during customer
+  onboarding (gate `document_storage_configured`).
+- **Env vars:** DOCUMENT_STORAGE_SUPABASE_URL/SERVICE_KEY, DOCUMENT_STORAGE_BUCKET,
+  DOCUMENT_STORAGE_S3_ENDPOINT/REGION/ACCESS_KEY_ID/SECRET_ACCESS_KEY,
+  DOCUMENT_STORAGE_LOCAL_DIR, MALWARE_SCANNER_CLAMAV_HOST/PORT,
+  MALWARE_SCANNER_ENDPOINT/API_KEY.
+- **Security notes:** production refuses uploads when scanning is disabled/failing
+  (defense in depth on top of startup validation); document access logs are complete
+  (data access + document event + audit per open/redact).
+- **Status:** production-safe.

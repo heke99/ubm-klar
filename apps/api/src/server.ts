@@ -53,6 +53,15 @@ import { createRepositories, WaiverValidationError, type Repositories } from './
 import { registerImportRoutes } from './import-routes';
 import { registerUbmRoutes } from './ubm-routes';
 import { registerExportRoutes } from './export-routes';
+import { registerDocumentRoutes } from './document-routes';
+import {
+  DisabledMalwareScanner,
+  LocalFileStorage,
+  type DocumentStorage,
+  type MalwareScanner,
+} from '@ubm-klar/document-vault';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 /**
  * UBM Klar backend API. All sensitive operations run here, server-side:
@@ -87,6 +96,13 @@ export interface ApiServerOptions {
   auth?: ApiAuthOptions;
   /** Per-tenant data plane connections (server-side service credentials). */
   dataPlane?: TenantDataPlanePool;
+  /** Document storage + malware scanning (defaults are local/dev-only). */
+  documents?: {
+    storage?: DocumentStorage;
+    scanner?: MalwareScanner;
+    scannerProvider?: string;
+    isProductionLike?: boolean;
+  };
   /**
    * Whether synthetic demo data may be served at all (environment-level gate;
    * loadAppConfig forbids this in stage/prod). The tenant must ALSO opt in via
@@ -649,6 +665,16 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
     auditLogger,
     requirePermission: (request, reply, permission) =>
       requirePermission(request, reply, permission, { kind: 'ubm_export_proposal' }),
+  });
+
+  registerDocumentRoutes(app, {
+    auditLogger,
+    requirePermission: (request, reply, permission) =>
+      requirePermission(request, reply, permission, { kind: 'document' }),
+    storage: options.documents?.storage ?? new LocalFileStorage(join(tmpdir(), 'ubm-klar-vault')),
+    scanner: options.documents?.scanner ?? new DisabledMalwareScanner(),
+    scannerProvider: options.documents?.scannerProvider ?? 'disabled-local',
+    isProductionLike: options.documents?.isProductionLike ?? false,
   });
 
   app.get('/documents', async (request, reply) => {

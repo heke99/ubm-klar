@@ -74,6 +74,9 @@ importers:
       '@ubm-klar/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@ubm-klar/document-vault':
+        specifier: workspace:*
+        version: link:../../packages/document-vault
       '@ubm-klar/economic-assistance-domain':
         specifier: workspace:*
         version: link:../../packages/economic-assistance-domain
@@ -101,6 +104,9 @@ importers:
       '@ubm-klar/reconciliation-engine':
         specifier: workspace:*
         version: link:../../packages/reconciliation-engine
+      '@ubm-klar/redaction-engine':
+        specifier: workspace:*
+        version: link:../../packages/redaction-engine
       '@ubm-klar/rule-engine':
         specifier: workspace:*
         version: link:../../packages/rule-engine
