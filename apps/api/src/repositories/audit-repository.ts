@@ -78,14 +78,17 @@ export class AuditRepository {
     reason?: string;
     context?: Record<string, unknown>;
     correlationId?: string;
+    /** Hash-chained events must store the exact timestamp that was hashed. */
+    occurredAt?: string;
     previousHash?: string;
     eventHash?: string;
   }): Promise<string> {
     const result = await this.db.query<{ id: string }>(
       `insert into audit_events
          (event_key, actor_user_id, actor_role, subject_kind, subject_id, action, outcome,
-          reason, context, correlation_id, previous_hash, event_hash)
-       values ($1, $2::uuid, $3, $4, $5::uuid, $6, $7, $8, $9::jsonb, $10::uuid, $11, $12)
+          reason, context, correlation_id, occurred_at, previous_hash, event_hash)
+       values ($1, $2::uuid, $3, $4, $5::uuid, $6, $7, $8, $9::jsonb, $10::uuid,
+               coalesce($11::timestamptz, now()), $12, $13)
        returning id`,
       [
         event.eventKey,
@@ -98,6 +101,7 @@ export class AuditRepository {
         event.reason ?? null,
         JSON.stringify(event.context ?? {}),
         event.correlationId ?? null,
+        event.occurredAt ?? null,
         event.previousHash ?? null,
         event.eventHash ?? null,
       ],

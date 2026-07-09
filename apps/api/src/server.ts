@@ -18,7 +18,7 @@ import {
   type OidcTokenVerifier,
 } from '@ubm-klar/auth';
 import type { RoleId } from '@ubm-klar/shared-types';
-import { AuditLogger, InMemoryAuditSink } from '@ubm-klar/audit';
+import { AuditLogger, computeEventHash, InMemoryAuditSink } from '@ubm-klar/audit';
 import {
   DataAccessLogger,
   InMemoryDataAccessSink,
@@ -54,6 +54,12 @@ import { registerImportRoutes } from './import-routes';
 import { registerUbmRoutes } from './ubm-routes';
 import { registerExportRoutes } from './export-routes';
 import { registerDocumentRoutes } from './document-routes';
+import {
+  createTenantLoggers,
+  type AccessRecorder,
+  type AuditRecorder,
+  type TenantLoggers,
+} from './audit-sinks';
 import {
   DisabledMalwareScanner,
   LocalFileStorage,
@@ -104,6 +110,12 @@ export interface ApiServerOptions {
     isProductionLike?: boolean;
   };
   /**
+   * When true (stage/prod), every tenant request MUST have a persistent data
+   * plane for audit/data-access logging — otherwise the request is refused.
+   * In-memory sinks are then unreachable.
+   */
+  requirePersistentAudit?: boolean;
+  /**
    * Whether synthetic demo data may be served at all (environment-level gate;
    * loadAppConfig forbids this in stage/prod). The tenant must ALSO opt in via
    * the demo_data_enabled feature flag.
@@ -122,6 +134,8 @@ declare module 'fastify' {
     subject?: AccessSubject | undefined;
     correlationId?: string;
     repositories?: Repositories | undefined;
+    auditLogger: AuditRecorder;
+    accessLogger: AccessRecorder;
   }
 }
 
@@ -275,8 +289,11 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
     allowInsecureHeaderAuth: options.allowDemoTenant ?? false,
     ...options.auth,
   };
-  const auditLogger = new AuditLogger(new InMemoryAuditSink());
-  const accessLogger = new DataAccessLogger(new InMemoryDataAccessSink());
+  // In-memory fallback loggers: reachable ONLY when requirePersistentAudit is
+  // off (local/demo/test). Production requests always use tenant data planes.
+  const fallbackAudit: AuditRecorder = new AuditLogger(new InMemoryAuditSink());
+  const fallbackAccess: AccessRecorder = new DataAccessLogger(new InMemoryDataAccessSink());
+  const tenantLoggerCache = new Map<string, TenantLoggers>();
 
   // --- Correlation id, tenant resolution (strict, fail-closed), auth --------
   app.addHook('onRequest', async (request, reply) => {
@@ -305,6 +322,25 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
     }
     const db = options.dataPlane?.resolve(request.tenant);
     request.repositories = db ? createRepositories(db) : undefined;
+    if (request.repositories) {
+      const key = `${request.tenant.tenantSlug}:${request.tenant.environment}`;
+      let loggers = tenantLoggerCache.get(key);
+      if (!loggers) {
+        loggers = createTenantLoggers(request.repositories);
+        tenantLoggerCache.set(key, loggers);
+      }
+      request.auditLogger = loggers.auditLogger;
+      request.accessLogger = loggers.accessLogger;
+    } else if (options.requirePersistentAudit) {
+      return reply.status(503).send({
+        error: 'audit_unavailable',
+        message:
+          'Beständig revisionslogg saknas för denna tenant (dataplan ej konfigurerad). Begäran stoppas.',
+      });
+    } else {
+      request.auditLogger = fallbackAudit;
+      request.accessLogger = fallbackAccess;
+    }
     try {
       request.subject = await resolveSubject(request, authOptions);
     } catch (error) {
@@ -359,7 +395,7 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
       ...(reason !== undefined ? { reason } : {}),
     });
     if (!decision.allowed) {
-      void auditLogger.record({
+      void request.auditLogger.record({
         eventKey: 'authorization.denied',
         actorUserId: request.subject.userId,
         action: `denied:${permission}`,
@@ -555,7 +591,7 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
         : {}),
       verifiedBy: profileId,
     });
-    await auditLogger.record({
+    await request.auditLogger.record({
       eventKey: 'readiness.gate_changed',
       actorUserId: request.subject!.userId,
       action: `readiness_gate_${request.body.status}`,
@@ -587,7 +623,7 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
       }
       throw error;
     }
-    await auditLogger.record({
+    await request.auditLogger.record({
       eventKey: 'readiness.gate_changed',
       actorUserId: request.subject!.userId,
       action: 'readiness_gate_waived',
@@ -648,27 +684,22 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
   });
 
   registerImportRoutes(app, {
-    auditLogger,
-    accessLogger,
     requirePermission: (request, reply, permission) =>
       requirePermission(request, reply, permission, { kind: 'import_batch' }),
     demoAllowed: (request) => demoAllowed(request.tenant),
   });
 
   registerUbmRoutes(app, {
-    auditLogger,
     requirePermission: (request, reply, permission) =>
       requirePermission(request, reply, permission, { kind: 'ubm_request' }),
   });
 
   registerExportRoutes(app, {
-    auditLogger,
     requirePermission: (request, reply, permission) =>
       requirePermission(request, reply, permission, { kind: 'ubm_export_proposal' }),
   });
 
   registerDocumentRoutes(app, {
-    auditLogger,
     requirePermission: (request, reply, permission) =>
       requirePermission(request, reply, permission, { kind: 'document' }),
     storage: options.documents?.storage ?? new LocalFileStorage(join(tmpdir(), 'ubm-klar-vault')),
@@ -708,6 +739,61 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
     return { dataSource: 'data_plane', events };
   });
 
+  /**
+   * Evidence-chain verification over the persistent audit log:
+   *  1. content integrity — every hashed event must recompute to its stored hash
+   *  2. linkage — every previous_hash must reference an existing event
+   * Content tampering and deletions surface as tamper warnings. Events written
+   * by trusted internal repositories without hashes are reported separately.
+   */
+  app.get('/audit/verify-chain', async (request, reply) => {
+    if (!requirePermission(request, reply, 'audit.read', { kind: 'audit_log' })) return;
+    if (!request.repositories) return { dataSource: 'empty', verification: null };
+    const rows = await request.repositories.audit.chain();
+    const hashed = rows.filter((row) => row.eventHash);
+    const knownHashes = new Set(hashed.map((row) => row.eventHash));
+    const problems: Array<{ index: number; reason: string }> = [];
+
+    hashed.forEach((row, index) => {
+      const recomputed = computeEventHash({
+        eventKey: row.eventKey as never,
+        ...(row.actorUserId ? { actorUserId: row.actorUserId } : {}),
+        ...(row.subjectKind ? { subjectKind: row.subjectKind } : {}),
+        ...(row.subjectId ? { subjectId: row.subjectId } : {}),
+        action: row.action,
+        outcome: row.outcome,
+        occurredAt: row.occurredAt,
+        previousHash: row.previousHash ?? null,
+      });
+      if (recomputed !== row.eventHash) {
+        problems.push({ index, reason: 'event content does not match its hash (tampered?)' });
+      }
+      if (row.previousHash && !knownHashes.has(row.previousHash)) {
+        problems.push({
+          index,
+          reason: 'previous event missing from the log (deleted?)',
+        });
+      }
+    });
+
+    const verification = {
+      valid: problems.length === 0,
+      ...(problems[0] ? { brokenAtIndex: problems[0].index, reason: problems[0].reason } : {}),
+      problemCount: problems.length,
+    };
+    logTechnical(request, 'AUDIT_CHAIN_VERIFIED', {
+      valid: verification.valid,
+      eventCount: rows.length,
+      hashedEventCount: hashed.length,
+    });
+    return {
+      dataSource: 'data_plane',
+      eventCount: rows.length,
+      hashedEventCount: hashed.length,
+      verification,
+    };
+  });
+
   app.get<{
     Querystring: { from?: string; to?: string; accessKind?: string };
   }>('/audit/data-access', async (request, reply) => {
@@ -728,7 +814,7 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
     if (!requirePermission(request, reply, 'ubm.proposal.create', { kind: 'ubm_eligibility' }))
       return;
     const decision = evaluateUbmEligibility(request.body);
-    await auditLogger.record({
+    await request.auditLogger.record({
       eventKey: 'export.proposal_created',
       actorUserId: request.subject!.userId,
       action: 'eligibility_evaluated',
@@ -769,7 +855,7 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
     if (!decision.allowed) {
       return reply.status(422).send({ error: 'reason_required', message: decision.error });
     }
-    await accessLogger.record({
+    await request.accessLogger.record({
       actorUserId: request.subject!.userId,
       accessKind: 'sensitive_field_reveal',
       fieldKey: body.fieldKey,
@@ -822,7 +908,7 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
         ...request.body,
         requestedBySupportUser: request.subject.userId,
       });
-      await auditLogger.record({
+      await request.auditLogger.record({
         eventKey: 'support.access',
         actorUserId: request.subject.userId,
         action: 'jit_session_created',
@@ -854,7 +940,7 @@ export function buildApiServer(options: ApiServerOptions): FastifyInstance {
           : {}),
         requestedDurationMs: request.body.requestedDurationMs,
       });
-      await auditLogger.record({
+      await request.auditLogger.record({
         eventKey: 'break_glass.session',
         actorUserId: request.subject.userId,
         action: 'session_created',

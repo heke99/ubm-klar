@@ -6,7 +6,7 @@ import {
   type UbmRequestStatus,
 } from '@ubm-klar/ubm-obligation-engine';
 import { evaluateUbmEligibility, type UbmEligibilityInput } from '@ubm-klar/ubm-eligibility-engine';
-import type { AuditLogger } from '@ubm-klar/audit';
+
 import type { PermissionKey } from '@ubm-klar/access-control';
 
 /**
@@ -19,7 +19,6 @@ import type { PermissionKey } from '@ubm-klar/access-control';
  */
 
 export interface UbmRoutesOptions {
-  auditLogger: AuditLogger;
   requirePermission: (
     request: FastifyRequest,
     reply: FastifyReply,
@@ -28,7 +27,7 @@ export interface UbmRoutesOptions {
 }
 
 export function registerUbmRoutes(app: FastifyInstance, options: UbmRoutesOptions): void {
-  const { auditLogger, requirePermission } = options;
+  const { requirePermission } = options;
 
   app.post<{
     Body: {
@@ -77,7 +76,7 @@ export function registerUbmRoutes(app: FastifyInstance, options: UbmRoutesOption
         [created.id, item.itemKey, item.description, item.requestedDataKind],
       );
     }
-    await auditLogger.record({
+    await request.auditLogger.record({
       eventKey: 'ubm.request_registered',
       actorUserId: request.subject!.userId,
       subjectKind: 'ubm_request',
@@ -168,7 +167,7 @@ export function registerUbmRoutes(app: FastifyInstance, options: UbmRoutesOption
         }
       }
       const updated = await repos.ubmRequests.updateStatus(ubmRequest.id, request.body.to);
-      await auditLogger.record({
+      await request.auditLogger.record({
         eventKey: 'ubm.request_registered',
         actorUserId: request.subject!.userId,
         subjectKind: 'ubm_request',
@@ -219,7 +218,7 @@ export function registerUbmRoutes(app: FastifyInstance, options: UbmRoutesOption
         ...(matched ? { matchConfidence: 1.0 } : {}),
         matchedBy: profileId,
       });
-      await auditLogger.record({
+      await request.auditLogger.record({
         eventKey: 'ubm.request_registered',
         actorUserId: request.subject!.userId,
         subjectKind: 'ubm_request',
@@ -255,7 +254,7 @@ export function registerUbmRoutes(app: FastifyInstance, options: UbmRoutesOption
          where id = $2::uuid and request_id = $1::uuid`,
         [request.params.id, request.params.subjectId, profileId],
       );
-      await auditLogger.record({
+      await request.auditLogger.record({
         eventKey: 'ubm.request_registered',
         actorUserId: request.subject!.userId,
         subjectKind: 'ubm_request',
@@ -293,7 +292,7 @@ export function registerUbmRoutes(app: FastifyInstance, options: UbmRoutesOption
         request.body.comment ?? null,
       ],
     );
-    await auditLogger.record({
+    await request.auditLogger.record({
       eventKey: 'export.legal_review',
       actorUserId: request.subject!.userId,
       subjectKind: 'ubm_request',
@@ -435,7 +434,7 @@ export function registerUbmRoutes(app: FastifyInstance, options: UbmRoutesOption
       if (!ubmRequest) return reply.status(404).send({ error: 'request_not_found' });
       const { input } = await buildEligibilityInput(repos, ubmRequest.id, request.body ?? {});
       const decision = evaluateUbmEligibility(input);
-      await auditLogger.record({
+      await request.auditLogger.record({
         eventKey: 'export.proposal_created',
         actorUserId: request.subject!.userId,
         subjectKind: 'ubm_request',
@@ -566,7 +565,7 @@ export function registerUbmRoutes(app: FastifyInstance, options: UbmRoutesOption
           await repos.ubmRequests.updateStatus(ubmRequest.id, status);
       }
 
-      await auditLogger.record({
+      await request.auditLogger.record({
         eventKey: 'export.proposal_created',
         actorUserId: request.subject!.userId,
         subjectKind: 'ubm_export_proposal',

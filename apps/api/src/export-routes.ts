@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { buildZipArchive } from '@ubm-klar/import-engine';
-import type { AuditLogger } from '@ubm-klar/audit';
+
 import type { PermissionKey } from '@ubm-klar/access-control';
 import type { Repositories } from './repositories';
 
@@ -15,7 +15,6 @@ import type { Repositories } from './repositories';
  */
 
 export interface ExportRoutesOptions {
-  auditLogger: AuditLogger;
   requirePermission: (
     request: FastifyRequest,
     reply: FastifyReply,
@@ -165,7 +164,7 @@ async function buildPackageContent(repos: Repositories, proposalId: string) {
 }
 
 export function registerExportRoutes(app: FastifyInstance, options: ExportRoutesOptions): void {
-  const { auditLogger, requirePermission } = options;
+  const { requirePermission } = options;
 
   app.get<{ Params: { id: string } }>('/ubm/export-proposals/:id', async (request, reply) => {
     if (!requirePermission(request, reply, 'ubm.request.read')) return;
@@ -242,7 +241,7 @@ export function registerExportRoutes(app: FastifyInstance, options: ExportRoutes
         [workflow.rows[0]!.id],
       );
       await repos.exportProposals.updateStatus(proposal.id, 'in_review', workflow.rows[0]!.id);
-      await auditLogger.record({
+      await request.auditLogger.record({
         eventKey: 'export.proposal_created',
         actorUserId: request.subject!.userId,
         subjectKind: 'ubm_export_proposal',
@@ -315,7 +314,7 @@ export function registerExportRoutes(app: FastifyInstance, options: ExportRoutes
         await repos.ubmRequests.updateStatus(ubmRequest.id, 'approved');
       }
     }
-    await auditLogger.record({
+    await request.auditLogger.record({
       eventKey: 'export.approved',
       actorUserId: request.subject!.userId,
       subjectKind: 'ubm_export_proposal',
@@ -366,7 +365,7 @@ export function registerExportRoutes(app: FastifyInstance, options: ExportRoutes
         ],
       );
       await repos.exportProposals.updateStatus(proposal.id, 'packaged');
-      await auditLogger.record({
+      await request.auditLogger.record({
         eventKey: 'export.packaged',
         actorUserId: request.subject!.userId,
         subjectKind: 'ubm_export_proposal',
@@ -428,7 +427,7 @@ export function registerExportRoutes(app: FastifyInstance, options: ExportRoutes
         reason: 'nedladdning av exportpaket',
         sessionKind: request.subject!.sessionKind,
       });
-      await auditLogger.record({
+      await request.auditLogger.record({
         eventKey: 'export.downloaded',
         actorUserId: request.subject!.userId,
         subjectKind: 'ubm_export_proposal',
@@ -468,7 +467,7 @@ export function registerExportRoutes(app: FastifyInstance, options: ExportRoutes
         await repos.ubmRequests.updateStatus(ubmRequest.id, 'exported');
       }
     }
-    await auditLogger.record({
+    await request.auditLogger.record({
       eventKey: 'ubm.export_sent',
       actorUserId: request.subject!.userId,
       subjectKind: 'ubm_export_proposal',
@@ -527,7 +526,7 @@ export function registerExportRoutes(app: FastifyInstance, options: ExportRoutes
         await repos.ubmRequests.updateStatus(ubmRequest.id, 'receipt_received');
       }
     }
-    await auditLogger.record({
+    await request.auditLogger.record({
       eventKey: 'export.receipt_registered',
       actorUserId: request.subject!.userId,
       subjectKind: 'ubm_export_proposal',

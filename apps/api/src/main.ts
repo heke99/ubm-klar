@@ -132,6 +132,9 @@ const app = buildApiServer({
     scannerProvider: config.documents.malwareScannerProvider,
     isProductionLike: config.isProductionLike,
   },
+  // stage/prod: in-memory audit/data-access sinks are unreachable — requests
+  // without a persistent tenant data plane are refused.
+  requirePersistentAudit: config.isProductionLike || config.audit.sink === 'postgres',
 });
 
 app.listen({ port, host: '0.0.0.0' }).then(() => {

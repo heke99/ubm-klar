@@ -8,7 +8,7 @@ import {
   type MalwareScanner,
 } from '@ubm-klar/document-vault';
 import { applyRedaction, planRedaction } from '@ubm-klar/redaction-engine';
-import type { AuditLogger } from '@ubm-klar/audit';
+
 import type { PermissionKey } from '@ubm-klar/access-control';
 
 /**
@@ -18,7 +18,6 @@ import type { PermissionKey } from '@ubm-klar/access-control';
  */
 
 export interface DocumentRoutesOptions {
-  auditLogger: AuditLogger;
   requirePermission: (
     request: FastifyRequest,
     reply: FastifyReply,
@@ -40,7 +39,7 @@ const ACCESS_KIND_BY_CLASS: Record<string, string> = {
 };
 
 export function registerDocumentRoutes(app: FastifyInstance, options: DocumentRoutesOptions): void {
-  const { auditLogger, requirePermission, storage, scanner } = options;
+  const { requirePermission, storage, scanner } = options;
 
   app.post<{
     Body: {
@@ -86,7 +85,7 @@ export function registerDocumentRoutes(app: FastifyInstance, options: DocumentRo
 
     const scanStatus = await scanner.scan(content, body.fileName);
     if (scanStatus === 'infected') {
-      await auditLogger.record({
+      await request.auditLogger.record({
         eventKey: 'document.upload',
         actorUserId: request.subject!.userId,
         action: 'upload_blocked_infected',
@@ -125,7 +124,7 @@ export function registerDocumentRoutes(app: FastifyInstance, options: DocumentRo
       malwareScanStatus: scanStatus,
       uploadedBy: profileId,
     });
-    await auditLogger.record({
+    await request.auditLogger.record({
       eventKey: 'document.upload',
       actorUserId: request.subject!.userId,
       subjectKind: 'document',
@@ -200,7 +199,7 @@ export function registerDocumentRoutes(app: FastifyInstance, options: DocumentRo
          values ($1::uuid, $2::uuid, 'open', $3, $4)`,
         [document.id, profileId, reason ?? null, request.subject!.sessionKind],
       );
-      await auditLogger.record({
+      await request.auditLogger.record({
         eventKey: 'document.open',
         actorUserId: request.subject!.userId,
         subjectKind: 'document',
@@ -321,7 +320,7 @@ export function registerDocumentRoutes(app: FastifyInstance, options: DocumentRo
          values ($1::uuid, $2::uuid, 'redact', 'maskning', $3)`,
         [document.id, profileId, request.subject!.sessionKind],
       );
-      await auditLogger.record({
+      await request.auditLogger.record({
         eventKey: 'document.redaction',
         actorUserId: request.subject!.userId,
         subjectKind: 'document',

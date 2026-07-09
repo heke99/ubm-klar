@@ -46,9 +46,13 @@ export default async function RevisionPage({
   if (params.to) accessQuery.set('to', params.to);
   if (params.accessKind) accessQuery.set('accessKind', params.accessKind);
 
-  const [audit, dataAccess] = await Promise.all([
+  const [audit, dataAccess, chain] = await Promise.all([
     apiGet<AuditResponse>(`/audit/events?${auditQuery.toString()}`),
     apiGet<DataAccessResponse>(`/audit/data-access?${accessQuery.toString()}`),
+    apiGet<{
+      eventCount: number;
+      verification: { valid: boolean; brokenAtIndex?: number; reason?: string } | null;
+    }>('/audit/verify-chain'),
   ]);
 
   return (
@@ -58,6 +62,28 @@ export default async function RevisionPage({
         Alla känsliga åtgärder skrivs till en beständig, hash-kedjad revisionslogg. All läsning av
         personuppgifter skrivs till dataåtkomstloggen. Loggarna kan inte ändras i efterhand.
       </p>
+
+      {chain.kind === 'ok' && chain.data.verification ? (
+        chain.data.verification.valid ? (
+          <p role="status" style={{ color: 'var(--color-success)' }}>
+            Beviskedjan är verifierad: {chain.data.eventCount} händelser, obruten hash-kedja.
+          </p>
+        ) : (
+          <p
+            role="alert"
+            style={{
+              color: 'var(--color-danger)',
+              border: '2px solid var(--color-danger)',
+              padding: 'var(--space-2)',
+              borderRadius: 'var(--radius)',
+            }}
+          >
+            VARNING: Beviskedjan är BRUTEN vid händelse{' '}
+            {chain.data.verification.brokenAtIndex ?? '?'} ({chain.data.verification.reason}).
+            Loggen kan ha manipulerats — kontakta informationssäkerhetsansvarig omedelbart.
+          </p>
+        )
+      ) : null}
 
       <Card title="Filter">
         <form method="get" style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>

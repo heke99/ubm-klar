@@ -1252,3 +1252,43 @@ error`) so pages render honest states without leaking backend details.
   (defense in depth on top of startup validation); document access logs are complete
   (data access + document event + audit per open/redact).
 - **Status:** production-safe.
+
+## Pilot Batch 13 — Audit, data access logs, evidence chain
+
+- **Implemented:**
+  - `PostgresAuditSink` + `PostgresDataAccessSink` (apps/api/src/audit-sinks.ts):
+    hash-chained audit events and data access events persist in the tenant's own
+    data plane. Per-tenant logger wrappers resolve SSO subject ids to data-plane
+    user-profile UUIDs BEFORE hashing (the stored event is exactly what the hash
+    covers) and preserve the hashed timestamp exactly (`occurred_at` no longer
+    defaults to now()).
+  - Per-request logger selection in the API: tenants with a data plane get the
+    persistent loggers (cached); with `requirePersistentAudit` (stage/prod, wired
+    from config) requests WITHOUT a data plane are refused 503 — the in-memory
+    sinks are unreachable in production.
+  - All route modules now audit via `request.auditLogger`/`request.accessLogger`
+    (denied authorizations, imports, UBM steps, exports, downloads, documents,
+    gates, support/break-glass).
+  - Evidence chain verification endpoint `GET /audit/verify-chain`: recomputes
+    every stored event hash (content tampering detection) and checks that every
+    `previous_hash` references an existing event (deletion detection); tolerant of
+    concurrent writers (forks are not false positives). `/revision` shows a green
+    verified banner or a red TAMPER warning.
+  - Log search endpoints already shipped in Batch 7 (`/audit/events`,
+    `/audit/data-access` with date/actor/event/outcome/access-kind filters).
+- **Files:** `apps/api/src/audit-sinks.ts`, `apps/api/src/server.ts` (per-request
+  loggers + verify endpoint), `apps/api/src/repositories/audit-repository.ts`
+  (occurredAt persistence), route modules, `apps/web/app/revision/page.tsx`.
+- **Migrations:** none new.
+- **Tests:** 7 audit persistence tests on live Postgres: sensitive actions write
+  hash-chained rows; denied authorization persists with outcome=denied; evidence
+  chain verifies over the persistent log; audit table is append-only in the
+  database (update rejected by trigger); a forged event breaks verification with a
+  tamper warning; log search filters work; production-like server refuses a tenant
+  without a data plane (503 audit_unavailable). 84 API tests green.
+- **Commands run:** full typecheck/test/lint/build/safety-check/format.
+- **Remaining:** SIEM export of no-PII events stays post-pilot.
+- **Env vars:** none new (AUDIT_SINK/DATA_ACCESS_SINK from Batch 2 now effective).
+- **Security notes:** no in-memory audit path exists for production requests;
+  chain verification detects both content tampering and deletions.
+- **Status:** production-safe.

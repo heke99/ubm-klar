@@ -20,8 +20,7 @@ import {
   type MappedRow,
   type ParsedTable,
 } from '@ubm-klar/import-engine';
-import type { AuditLogger } from '@ubm-klar/audit';
-import type { DataAccessLogger } from '@ubm-klar/data-access-log';
+
 import { COMMITTERS, CommitError } from './import-commit';
 
 /**
@@ -31,8 +30,6 @@ import { COMMITTERS, CommitError } from './import-commit';
  */
 
 export interface ImportRoutesOptions {
-  auditLogger: AuditLogger;
-  accessLogger: DataAccessLogger;
   requirePermission: (
     request: FastifyRequest,
     reply: FastifyReply,
@@ -45,7 +42,7 @@ const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 const MAX_ROWS = 50_000;
 
 export function registerImportRoutes(app: FastifyInstance, options: ImportRoutesOptions): void {
-  const { auditLogger, requirePermission } = options;
+  const { requirePermission } = options;
 
   app.get('/imports/source-systems', async (request, reply) => {
     if (!requirePermission(request, reply, 'import.run')) return;
@@ -164,7 +161,7 @@ export function registerImportRoutes(app: FastifyInstance, options: ImportRoutes
     });
     await repos.importBatches.updateStatus(batch.id, 'mapping');
 
-    await auditLogger.record({
+    await request.auditLogger.record({
       eventKey: 'import.batch',
       actorUserId: request.subject!.userId,
       action: 'import_uploaded',
@@ -388,7 +385,7 @@ export function registerImportRoutes(app: FastifyInstance, options: ImportRoutes
       const errorRowCount = new Set(
         issues.filter((i) => i.severity === 'error').map((i) => i.rowNumber),
       ).size;
-      await auditLogger.record({
+      await request.auditLogger.record({
         eventKey: 'import.batch',
         actorUserId: request.subject!.userId,
         action: 'import_validated',
@@ -495,7 +492,7 @@ export function registerImportRoutes(app: FastifyInstance, options: ImportRoutes
     const skippedRows = staged.rows.length - validRows.length;
     const finalStatus = skippedRows > 0 ? 'partially_loaded' : 'loaded';
     await repos.importBatches.updateStatus(batch.id, finalStatus, { finished: true });
-    await auditLogger.record({
+    await request.auditLogger.record({
       eventKey: 'import.batch',
       actorUserId: request.subject!.userId,
       action: 'import_committed',
@@ -529,7 +526,7 @@ export function registerImportRoutes(app: FastifyInstance, options: ImportRoutes
         errorSummary: 'Återställd före inläsning',
         finished: true,
       });
-      await auditLogger.record({
+      await request.auditLogger.record({
         eventKey: 'import.batch',
         actorUserId: request.subject!.userId,
         action: 'import_rolled_back',
